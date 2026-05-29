@@ -13,6 +13,7 @@ Item {
     property bool listening: false       // true while waiting for a key chord
 
     signal closeRequested()              // Esc while not listening -> close popover
+    signal rebound()                     // hotkey rewritten + reloaded -> close rishot so the new key is usable now
 
     readonly property color glassBg: Qt.rgba(24 / 255, 28 / 255, 38 / 255, 0.97)
     readonly property color glassBorder: "#3a4456"
@@ -42,7 +43,7 @@ Item {
     Process {
         id: reloadProc
         command: ["hyprctl", "reload"]
-        onExited: (code) => console.log("rishot: hyprctl reload exit " + code)
+        onExited: (code) => { console.log("rishot: hyprctl reload exit " + code); panel.rebound(); }
     }
 
     // Commit a captured chord: update label, rewrite file, reload.

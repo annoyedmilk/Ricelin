@@ -289,6 +289,7 @@ ShellRoot {
                                             win.width - width - 8))
                     y: toolbar.y - height - 6
                     onCloseRequested: root.settingsOpen = false
+                    onRebound: Qt.quit()   // close so the freshly-bound hotkey is usable immediately
                 }
             }
 
