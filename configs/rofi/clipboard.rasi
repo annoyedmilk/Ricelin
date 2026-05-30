@@ -1,0 +1,14 @@
+@import "config.rasi"
+
+element {
+    padding: 8px 12px;
+}
+
+element-icon {
+    size: 48px;
+}
+
+listview {
+    lines: 7;
+    spacing: 6px;
+}

@@ -1,0 +1,11 @@
+configuration {
+    modes: "drun";
+    show-icons: true;
+    icon-theme: "Papirus";
+    drun-display-format: "{name}";
+    drun-match-fields: "name,generic,exec,keywords";
+    display-drun: "●";
+    font: "Inter 12";
+}
+
+@import "theme.rasi"

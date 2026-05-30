@@ -1,0 +1,100 @@
+* {
+    bg-window: #241914f5;
+    bg-alt:    transparent;
+    border:    #96acd41a;
+    text:      #e6d6cb;
+    text-dim:  #7e8794;
+    accent:    #c0442b;
+    accent2:   #a3371f;
+    sel-text:  #fff6f0;
+
+    background-color: transparent;
+    text-color:      @text;
+}
+
+window {
+    width:            540px;
+    background-color: @bg-window;
+    border:           1px;
+    border-color:     @border;
+    border-radius:    16px;
+    padding:          0px;
+}
+
+mainbox {
+    background-color: transparent;
+    padding:          0px;
+    border:           0px;
+    children:         [ inputbar, listview ];
+}
+
+inputbar {
+    background-color: transparent;
+    padding:          18px 20px 10px 20px;
+    spacing:          12px;
+    children:         [ prompt, entry ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color:       @accent;
+    vertical-align:   0.5;
+}
+
+entry {
+    background-color: transparent;
+    text-color:       @text;
+    placeholder:      "Search";
+    placeholder-color: @text-dim;
+    vertical-align:   0.5;
+    cursor:           text;
+}
+
+listview {
+    background-color: transparent;
+    columns:          1;
+    lines:            8;
+    spacing:          4px;
+    padding:          10px;
+    border:           0px;
+    scrollbar:        false;
+    fixed-height:     false;
+    dynamic:          true;
+}
+
+element {
+    background-color: transparent;
+    text-color:       @text;
+    padding:          11px 12px;
+    spacing:          12px;
+    border-radius:    11px;
+}
+
+element normal.normal,
+element normal.active,
+element normal.urgent,
+element alternate.normal,
+element alternate.active,
+element alternate.urgent {
+    background-color: transparent;
+    text-color:       @text;
+}
+
+element selected.normal,
+element selected.active,
+element selected.urgent {
+    background-color: @accent;
+    text-color:       @sel-text;
+}
+
+element-icon {
+    background-color: transparent;
+    size:             24px;
+    vertical-align:   0.5;
+}
+
+element-text {
+    background-color: transparent;
+    text-color:       inherit;
+    vertical-align:   0.5;
+}
