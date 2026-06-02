@@ -73,3 +73,15 @@ hl.layer_rule({
     match   = { namespace = "topbar-tray" },
     no_anim = true,
 })
+
+hl.layer_rule({
+    name    = "sidebar-noanim",
+    match   = { namespace = "sidebar" },
+    no_anim = true,
+})
+
+hl.layer_rule({
+    name    = "sidebar-inhibit-noanim",
+    match   = { namespace = "sidebar-inhibit" },
+    no_anim = true,
+})

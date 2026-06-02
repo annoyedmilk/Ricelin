@@ -34,6 +34,13 @@ Card {
         return Math.round(b) + "%";
     }
 
+    Timer {
+        id: scanTimer
+        interval: 25000
+        repeat: false
+        onTriggered: if (root.adapter) root.adapter.discovering = false
+    }
+
     Item {
         width: parent.width
         implicitHeight: 21 * root.s
@@ -105,7 +112,15 @@ Card {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: if (root.adapter) root.adapter.discovering = !root.adapter.discovering
+                onClicked: {
+                    if (!root.adapter)
+                        return;
+                    root.adapter.discovering = !root.adapter.discovering;
+                    if (root.adapter.discovering)
+                        scanTimer.restart();
+                    else
+                        scanTimer.stop();
+                }
             }
         }
         Rectangle {

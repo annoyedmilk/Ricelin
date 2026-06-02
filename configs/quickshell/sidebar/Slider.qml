@@ -35,6 +35,7 @@ Item {
     MouseArea {
         anchors.fill: parent
         anchors.margins: -8 * root.s
+        preventStealing: true
         function setFromX(mx) {
             var v = Math.max(0, Math.min(1, mx / width));
             root.value = v; root.moved(v);

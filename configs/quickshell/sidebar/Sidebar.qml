@@ -16,14 +16,13 @@ Item {
     Rectangle {
         id: card
         width: sidebar.panelWidth
-        height: parent.height
+        height: Math.min(stack.contentHeight + 28 * sidebar.s, parent.height)
         radius: 22 * s
         color: "transparent"
         border.width: 1
         border.color: Theme.border
 
         opacity: sidebar.opened ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: 90 } }
 
         gradient: Gradient {
             GradientStop { position: 0.0; color: Theme.cardTop }
