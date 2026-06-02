@@ -1,18 +1,38 @@
 import QtQuick
 import QtQuick.Effects
+import Quickshell.Bluetooth
 import "Singletons"
 
 Card {
     id: root
 
-    property var devices: [
-        { name: "WH-1000XM5", meta: "Headphones · connected", icon: "bluetooth", connected: true, battery: "82%" },
-        { name: "DualSense", meta: "Controller · paired", icon: "bluetooth", connected: false, battery: "" },
-        { name: "8BitDo Ultimate", meta: "Controller · paired", icon: "bluetooth", connected: false, battery: "" },
-        { name: "Magic Trackpad", meta: "Pointer · paired", icon: "bluetooth", connected: false, battery: "" },
-        { name: "Galaxy Buds", meta: "Earbuds · paired", icon: "bluetooth", connected: false, battery: "" },
-        { name: "Keychron K2", meta: "Keyboard · paired", icon: "bluetooth", connected: false, battery: "" }
-    ]
+    readonly property var adapter: typeof Bluetooth !== "undefined" && Bluetooth ? Bluetooth.defaultAdapter : null
+    readonly property var devices: typeof Bluetooth !== "undefined" && Bluetooth && Bluetooth.devices ? Bluetooth.devices.values : []
+    readonly property int connectedCount: {
+        var n = 0;
+        for (var i = 0; i < devices.length; i++) if (devices[i] && devices[i].connected) n++;
+        return n;
+    }
+
+    function metaFor(d) {
+        if (!d) return "";
+        var parts = [];
+        if (d.connected) parts.push("connected");
+        else if (d.paired) parts.push("paired");
+        if (d.state !== undefined && typeof BluetoothDeviceState !== "undefined") {
+            var st = BluetoothDeviceState.toString(d.state);
+            if (st && st.length > 0 && parts.indexOf(st.toLowerCase()) === -1) parts.push(st.toLowerCase());
+        }
+        return parts.join(" · ");
+    }
+
+    function batteryFor(d) {
+        if (!d || d.battery === undefined || d.battery === null) return "";
+        var b = d.battery;
+        if (b <= 0) return "";
+        if (b <= 1) b = b * 100;
+        return Math.round(b) + "%";
+    }
 
     Item {
         width: parent.width
@@ -51,7 +71,7 @@ Card {
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "3 connected"
+                text: root.connectedCount + " connected"
                 color: Theme.dim
                 font.family: Theme.font
                 font.pixelSize: 10 * root.s
@@ -60,30 +80,54 @@ Card {
         }
 
         Rectangle {
+            id: toggle
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             width: 38 * root.s; height: 21 * root.s; radius: 11 * root.s
             border.width: 1
-            border.color: Theme.vermLit
-            gradient: Gradient {
+            property bool on: root.adapter ? root.adapter.enabled : false
+            border.color: on ? Theme.vermLit : Theme.border
+            color: on ? "transparent" : Theme.tileBg
+            gradient: on ? onGrad : null
+            Gradient {
+                id: onGrad
                 GradientStop { position: 0.0; color: Theme.vermLit }
                 GradientStop { position: 1.0; color: Theme.verm }
             }
             Rectangle {
                 width: 15 * root.s; height: 15 * root.s; radius: width / 2
-                color: "#fbeee7"
+                color: toggle.on ? "#fbeee7" : Theme.dim
                 y: 2 * root.s
-                x: parent.width - width - 2 * root.s
+                x: toggle.on ? parent.width - width - 2 * root.s : 2 * root.s
+                Behavior on x { NumberAnimation { duration: 130 } }
+            }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: if (root.adapter) root.adapter.enabled = !root.adapter.enabled
             }
         }
     }
 
     Item {
+        id: listFrame
         width: parent.width
-        implicitHeight: Math.min(list.contentHeight, 170 * root.s)
+        implicitHeight: root.devices.length > 0 ? Math.min(list.contentHeight, 170 * root.s) : 22 * root.s
+
+        Text {
+            visible: root.devices.length === 0
+            anchors.left: parent.left
+            anchors.verticalCenter: parent.verticalCenter
+            text: "No devices"
+            color: Theme.dim
+            font.family: Theme.font
+            font.pixelSize: 11 * root.s
+            font.weight: Font.Medium
+        }
 
         Flickable {
             id: list
+            visible: root.devices.length > 0
             anchors.fill: parent
             contentHeight: rows.implicitHeight
             boundsBehavior: Flickable.StopAtBounds
@@ -98,12 +142,14 @@ Card {
                     model: root.devices
                     delegate: Rectangle {
                         required property var modelData
+                        readonly property bool isConnected: modelData ? modelData.connected : false
+                        readonly property string battery: root.batteryFor(modelData)
                         width: rows.width
                         implicitHeight: 46 * root.s
                         radius: 11 * root.s
-                        color: modelData.connected ? Theme.accent16 : "transparent"
+                        color: isConnected ? Theme.accent16 : "transparent"
                         border.width: 1
-                        border.color: modelData.connected ? Theme.accent45 : "transparent"
+                        border.color: isConnected ? Theme.accent45 : "transparent"
 
                         Row {
                             anchors.left: parent.left
@@ -114,14 +160,14 @@ Card {
                             Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 30 * root.s; height: 30 * root.s; radius: 9 * root.s
-                                color: modelData.connected ? Theme.accent16 : Theme.tileBg
+                                color: isConnected ? Theme.accent16 : Theme.tileBg
                                 border.width: 1
-                                border.color: modelData.connected ? Theme.accent45 : Theme.border
+                                border.color: isConnected ? Theme.accent45 : Theme.border
                                 Image {
                                     id: dico
                                     anchors.centerIn: parent
                                     width: 16 * root.s; height: 16 * root.s
-                                    source: Qt.resolvedUrl("assets/icons/" + modelData.icon + ".svg")
+                                    source: Qt.resolvedUrl("assets/icons/bluetooth.svg")
                                     sourceSize.width: 64; sourceSize.height: 64
                                     fillMode: Image.PreserveAspectFit
                                     smooth: true; mipmap: true; visible: false
@@ -130,21 +176,21 @@ Card {
                                     anchors.fill: dico
                                     source: dico
                                     colorization: 1.0
-                                    colorizationColor: modelData.connected ? Theme.vermLit : Theme.dim
+                                    colorizationColor: isConnected ? Theme.vermLit : Theme.dim
                                 }
                             }
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 1 * root.s
                                 Text {
-                                    text: modelData.name
-                                    color: modelData.connected ? Theme.cream : "#b9a99e"
+                                    text: modelData ? (modelData.deviceName || modelData.name || "Unknown") : "Unknown"
+                                    color: isConnected ? Theme.cream : "#b9a99e"
                                     font.family: Theme.font
                                     font.pixelSize: 12.5 * root.s
-                                    font.weight: modelData.connected ? Font.DemiBold : Font.Medium
+                                    font.weight: isConnected ? Font.DemiBold : Font.Medium
                                 }
                                 Text {
-                                    text: modelData.meta
+                                    text: root.metaFor(modelData)
                                     color: "#6f635b"
                                     font.family: Theme.font
                                     font.pixelSize: 10 * root.s
@@ -154,11 +200,11 @@ Card {
                         }
 
                         Text {
-                            visible: modelData.connected
+                            visible: isConnected && battery.length > 0
                             anchors.right: parent.right
                             anchors.rightMargin: 11 * root.s
                             anchors.verticalCenter: parent.verticalCenter
-                            text: modelData.battery
+                            text: battery
                             color: Theme.vermLit
                             font.family: Theme.font
                             font.pixelSize: 10.5 * root.s
@@ -166,7 +212,7 @@ Card {
                         }
 
                         Rectangle {
-                            visible: !modelData.connected
+                            visible: !isConnected
                             anchors.right: parent.right
                             anchors.rightMargin: 9 * root.s
                             anchors.verticalCenter: parent.verticalCenter
@@ -187,12 +233,23 @@ Card {
                                 font.weight: Font.DemiBold
                             }
                         }
+
+                        MouseArea {
+                            anchors.fill: parent
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                if (!modelData) return;
+                                if (modelData.connected) modelData.disconnect();
+                                else modelData.connect();
+                            }
+                        }
                     }
                 }
             }
         }
 
         Rectangle {
+            visible: list.visible && list.contentHeight > listFrame.height
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
             height: 18 * root.s
             gradient: Gradient {

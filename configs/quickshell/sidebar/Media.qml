@@ -1,10 +1,68 @@
 import QtQuick
 import QtQuick.Effects
+import Quickshell.Services.Mpris
 import "Singletons"
 
 Rectangle {
     id: root
     property real s: 1
+    property bool opened: false
+
+    readonly property var player: {
+        var list = Mpris.players.values;
+        if (!list || list.length === 0)
+            return null;
+        var controllable = null;
+        for (var i = 0; i < list.length; i++) {
+            var p = list[i];
+            if (!p)
+                continue;
+            if (p.isPlaying)
+                return p;
+            if (!controllable && p.canControl)
+                controllable = p;
+        }
+        return controllable ? controllable : list[0];
+    }
+
+    readonly property bool hasPlayer: player !== null
+    readonly property bool playing: hasPlayer && player.isPlaying
+
+    readonly property string trackTitle: {
+        if (!player)
+            return "";
+        return player.trackTitle ? player.trackTitle : "";
+    }
+    readonly property string trackArtist: {
+        if (!player)
+            return "";
+        if (player.trackArtists && player.trackArtists.length > 0)
+            return player.trackArtists;
+        return player.trackArtist ? player.trackArtist : "";
+    }
+    readonly property string artUrl: {
+        if (!player)
+            return "";
+        return player.trackArtUrl ? player.trackArtUrl : "";
+    }
+    readonly property real lengthSec: hasPlayer && player.length > 0 ? player.length : 0
+    readonly property real positionSec: hasPlayer ? player.position : 0
+
+    function fmt(sec) {
+        if (!(sec > 0))
+            return "0:00";
+        var t = Math.floor(sec);
+        var m = Math.floor(t / 60);
+        var ss = t % 60;
+        return m + ":" + (ss < 10 ? "0" + ss : ss);
+    }
+
+    Timer {
+        interval: 1000
+        running: root.opened && root.playing
+        repeat: true
+        onTriggered: if (root.player) root.player.positionChanged()
+    }
 
     radius: 16 * s
     color: "transparent"
@@ -63,7 +121,9 @@ Rectangle {
             spacing: 13 * root.s
 
             Rectangle {
+                id: art
                 width: 76 * root.s; height: 76 * root.s; radius: 12 * root.s
+                clip: true
                 border.width: 1
                 border.color: Theme.border
                 gradient: Gradient {
@@ -72,10 +132,39 @@ Rectangle {
                 }
                 Rectangle {
                     anchors.centerIn: parent
+                    visible: root.artUrl.length === 0
                     width: 22 * root.s; height: 22 * root.s; radius: width / 2
                     color: "transparent"
                     border.width: 1
                     border.color: Qt.rgba(230/255, 214/255, 203/255, 0.22)
+                }
+                Image {
+                    id: artImg
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    visible: root.artUrl.length > 0
+                    source: root.artUrl
+                    fillMode: Image.PreserveAspectCrop
+                    smooth: true
+                    mipmap: true
+                    cache: false
+                    asynchronous: true
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        maskEnabled: true
+                        maskSource: artMask
+                    }
+                }
+                Item {
+                    id: artMask
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    layer.enabled: true
+                    visible: false
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 11 * root.s
+                    }
                 }
             }
 
@@ -85,7 +174,7 @@ Rectangle {
                 spacing: 2 * root.s
                 Text {
                     text: "Now Playing"
-                    color: Theme.vermLit
+                    color: root.hasPlayer ? Theme.vermLit : Theme.dim
                     font.family: Theme.font
                     font.pixelSize: 9 * root.s
                     font.weight: Font.DemiBold
@@ -95,8 +184,8 @@ Rectangle {
                 }
                 Text {
                     width: parent.width
-                    text: "Spiegel im Spiegel"
-                    color: Theme.cream
+                    text: root.hasPlayer ? (root.trackTitle.length > 0 ? root.trackTitle : "Unknown") : "Nothing playing"
+                    color: root.hasPlayer ? Theme.cream : Theme.dim
                     font.family: Theme.font
                     font.pixelSize: 14 * root.s
                     font.weight: Font.DemiBold
@@ -104,7 +193,8 @@ Rectangle {
                 }
                 Text {
                     width: parent.width
-                    text: "Arvo Pärt"
+                    visible: root.trackArtist.length > 0
+                    text: root.trackArtist
                     color: Theme.dim
                     font.family: Theme.font
                     font.pixelSize: 11.5 * root.s
@@ -127,7 +217,7 @@ Rectangle {
                 radius: 99
                 color: Theme.trackBg
                 Rectangle {
-                    width: parent.width * 0.38
+                    width: parent.width * (root.lengthSec > 0 ? Math.max(0, Math.min(1, root.positionSec / root.lengthSec)) : 0)
                     height: parent.height
                     radius: 99
                     gradient: Gradient {
@@ -142,7 +232,7 @@ Rectangle {
                 implicitHeight: 12 * root.s
                 Text {
                     anchors.left: parent.left
-                    text: "3:42"
+                    text: root.fmt(root.positionSec)
                     color: "#6f635b"
                     font.family: Theme.font
                     font.pixelSize: 10 * root.s
@@ -150,7 +240,7 @@ Rectangle {
                 }
                 Text {
                     anchors.right: parent.right
-                    text: "9:38"
+                    text: root.fmt(root.lengthSec)
                     color: "#6f635b"
                     font.family: Theme.font
                     font.pixelSize: 10 * root.s
@@ -170,11 +260,14 @@ Rectangle {
                 TBtn {
                     icon: "prev"
                     box: 20
+                    tint: root.hasPlayer && root.player.canGoPrevious ? "#b9a99e" : "#5a5048"
                     anchors.verticalCenter: parent.verticalCenter
+                    onClicked: if (root.player && root.player.canGoPrevious) root.player.previous()
                 }
                 Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 42 * root.s; height: 42 * root.s; radius: width / 2
+                    opacity: root.hasPlayer ? 1 : 0.45
                     border.width: 1
                     border.color: Theme.vermLit
                     gradient: Gradient {
@@ -185,7 +278,7 @@ Rectangle {
                         id: playImg
                         anchors.centerIn: parent
                         width: 18 * root.s; height: 18 * root.s
-                        source: Qt.resolvedUrl("assets/icons/play.svg")
+                        source: Qt.resolvedUrl("assets/icons/" + (root.playing ? "pause" : "play") + ".svg")
                         sourceSize.width: 64; sourceSize.height: 64
                         fillMode: Image.PreserveAspectFit
                         smooth: true; mipmap: true; visible: false
@@ -196,11 +289,18 @@ Rectangle {
                         colorization: 1.0
                         colorizationColor: "#fbeee7"
                     }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: if (root.player && root.player.canTogglePlaying) root.player.togglePlaying()
+                    }
                 }
                 TBtn {
                     icon: "next"
                     box: 20
+                    tint: root.hasPlayer && root.player.canGoNext ? "#b9a99e" : "#5a5048"
                     anchors.verticalCenter: parent.verticalCenter
+                    onClicked: if (root.player && root.player.canGoNext) root.player.next()
                 }
             }
         }

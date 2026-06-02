@@ -1,11 +1,36 @@
 import QtQuick
 import QtQuick.Effects
+import Quickshell.Io
 import "Singletons"
 
 Rectangle {
     id: root
     property real s: 1
     property bool opened: false
+    property string greet: greeting()
+    property string uptime: ""
+
+    function greeting() {
+        var h = new Date().getHours();
+        return h < 5 ? "Good Night" : h < 12 ? "Good Morning" : h < 18 ? "Good Afternoon" : "Good Evening";
+    }
+
+    onOpenedChanged: if (opened) { greet = greeting(); upProc.running = true; }
+
+    Process {
+        id: upProc
+        command: ["uptime", "-p"]
+        running: false
+        stdout: StdioCollector { onStreamFinished: root.uptime = this.text.trim() }
+    }
+
+    Timer {
+        interval: 60000
+        running: root.opened
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: upProc.running = true
+    }
 
     radius: 16 * s
     color: "transparent"
@@ -59,7 +84,7 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 2 * root.s
             Text {
-                text: "Good Evening"
+                text: root.greet
                 color: Theme.cream
                 font.family: Theme.font
                 font.pixelSize: 15 * root.s
@@ -116,7 +141,7 @@ Rectangle {
                     font.weight: Font.Medium
                 }
                 Text {
-                    text: "3d 14h 22m"
+                    text: root.uptime.replace(/^up\s+/, "")
                     color: Theme.cream
                     font.family: Theme.font
                     font.pixelSize: 11 * root.s

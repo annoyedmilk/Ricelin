@@ -1,31 +1,44 @@
 import QtQuick
 import QtQuick.Effects
+import Quickshell.Services.Pipewire
 import "Singletons"
 
 Card {
     id: root
     eyebrow: "Audio"
 
+    readonly property var sink: Pipewire.defaultAudioSink
+    readonly property var source: Pipewire.defaultAudioSource
+
+    PwObjectTracker {
+        objects: [root.sink, root.source].filter(Boolean)
+    }
+
     component SinkRow: Item {
+        id: sinkRow
         property string label: ""
         property string device: ""
         property string chip: ""
+        property var candidates: []
+        property bool menuOpen: false
+        signal selected(var node)
         width: parent ? parent.width : 0
         implicitHeight: 24 * root.s
+        z: menuOpen ? 100 : 0
 
         Row {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             spacing: 0
             Text {
-                text: label + " · "
+                text: sinkRow.label + " · "
                 color: Theme.dim
                 font.family: Theme.font
                 font.pixelSize: 11.5 * root.s
                 font.weight: Font.Medium
             }
             Text {
-                text: device
+                text: sinkRow.device
                 color: "#b9a99e"
                 font.family: Theme.font
                 font.pixelSize: 11.5 * root.s
@@ -33,6 +46,7 @@ Card {
             }
         }
         Rectangle {
+            id: chipRect
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             radius: 9 * root.s
@@ -66,21 +80,86 @@ Card {
                 }
                 Text {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: chip
+                    text: sinkRow.chip
                     color: "#b9a99e"
                     font.family: Theme.font
                     font.pixelSize: 10.5 * root.s
                     font.weight: Font.DemiBold
                 }
             }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                enabled: sinkRow.candidates.length > 0
+                onClicked: sinkRow.menuOpen = !sinkRow.menuOpen
+            }
+        }
+        Rectangle {
+            id: menu
+            visible: sinkRow.menuOpen
+            anchors.right: chipRect.right
+            anchors.top: chipRect.bottom
+            anchors.topMargin: 6 * root.s
+            radius: 10 * root.s
+            color: Theme.panelTop
+            border.width: 1
+            border.color: Theme.border
+            width: Math.max(chipRect.width, 180 * root.s)
+            height: menuCol.implicitHeight + 12 * root.s
+            z: 200
+            Column {
+                id: menuCol
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                anchors.margins: 6 * root.s
+                spacing: 2 * root.s
+                Repeater {
+                    model: sinkRow.candidates
+                    delegate: Rectangle {
+                        required property var modelData
+                        width: menuCol.width
+                        height: 22 * root.s
+                        radius: 7 * root.s
+                        color: rowHover.containsMouse ? Theme.tileBg : "transparent"
+                        Text {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 8 * root.s
+                            anchors.right: parent.right
+                            anchors.rightMargin: 8 * root.s
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: modelData && modelData.description ? modelData.description : (modelData && modelData.name ? modelData.name : "")
+                            elide: Text.ElideRight
+                            color: "#b9a99e"
+                            font.family: Theme.font
+                            font.pixelSize: 11 * root.s
+                            font.weight: Font.DemiBold
+                        }
+                        MouseArea {
+                            id: rowHover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                sinkRow.selected(modelData);
+                                sinkRow.menuOpen = false;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
     component VolRow: Item {
+        id: volRow
         property string icon: ""
         property real value: 0.5
         property string valueLabel: ""
         property bool hasMic: false
+        property bool micMuted: false
+        signal moved(real v)
+        signal micToggled()
         width: parent ? parent.width : 0
         implicitHeight: 26 * root.s
 
@@ -92,7 +171,7 @@ Card {
             Image {
                 id: vIconImg
                 anchors.fill: parent
-                source: Qt.resolvedUrl("assets/icons/" + icon + ".svg")
+                source: Qt.resolvedUrl("assets/icons/" + volRow.icon + ".svg")
                 sourceSize.width: 64; sourceSize.height: 64
                 fillMode: Image.PreserveAspectFit
                 smooth: true; mipmap: true; visible: false
@@ -106,12 +185,12 @@ Card {
         }
         Text {
             id: vval
-            anchors.right: hasMic ? micbtn.left : parent.right
-            anchors.rightMargin: hasMic ? 10 * root.s : 0
+            anchors.right: volRow.hasMic ? micbtn.left : parent.right
+            anchors.rightMargin: volRow.hasMic ? 10 * root.s : 0
             anchors.verticalCenter: parent.verticalCenter
             width: 34 * root.s
             horizontalAlignment: Text.AlignRight
-            text: valueLabel
+            text: volRow.valueLabel
             color: "#b9a99e"
             font.family: Theme.font
             font.pixelSize: 11 * root.s
@@ -119,27 +198,29 @@ Card {
         }
         Slider {
             s: root.s
-            value: parent.value
+            value: volRow.value
+            throttleMs: 0
             anchors.left: vicon.right
             anchors.leftMargin: 12 * root.s
             anchors.right: vval.left
             anchors.rightMargin: 12 * root.s
             anchors.verticalCenter: parent.verticalCenter
+            onMoved: (v) => volRow.moved(v)
         }
         Rectangle {
             id: micbtn
-            visible: hasMic
+            visible: volRow.hasMic
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             width: 26 * root.s; height: 26 * root.s; radius: 8 * root.s
-            color: Theme.accent16
+            color: volRow.micMuted ? Theme.accent16 : Theme.tileBg
             border.width: 1
-            border.color: Theme.accent45
+            border.color: volRow.micMuted ? Theme.accent45 : Theme.border
             Image {
                 id: micOffImg
                 anchors.centerIn: parent
                 width: 14 * root.s; height: 14 * root.s
-                source: Qt.resolvedUrl("assets/icons/mic-off.svg")
+                source: Qt.resolvedUrl("assets/icons/" + (volRow.micMuted ? "mic-off" : "mic") + ".svg")
                 sourceSize.width: 64; sourceSize.height: 64
                 fillMode: Image.PreserveAspectFit
                 smooth: true; mipmap: true; visible: false
@@ -148,13 +229,29 @@ Card {
                 anchors.fill: micOffImg
                 source: micOffImg
                 colorization: 1.0
-                colorizationColor: Theme.vermLit
+                colorizationColor: volRow.micMuted ? Theme.vermLit : "#b9a99e"
+            }
+            MouseArea {
+                anchors.fill: parent
+                cursorShape: Qt.PointingHandCursor
+                onClicked: volRow.micToggled()
             }
         }
     }
 
-    SinkRow { label: "Output"; device: "Edifier R1280T"; chip: "HDMI" }
-    VolRow { icon: "speaker"; value: 0.68; valueLabel: "68%" }
+    SinkRow {
+        label: "Output"
+        device: root.sink ? (root.sink.description ? root.sink.description : root.sink.name) : ""
+        chip: "Switch"
+        candidates: Pipewire.nodes.values.filter(n => n.isSink && n.audio)
+        onSelected: (node) => { if (node) Pipewire.preferredDefaultAudioSink = node; }
+    }
+    VolRow {
+        icon: "speaker"
+        value: root.sink && root.sink.audio ? root.sink.audio.volume : 0
+        valueLabel: Math.round((root.sink && root.sink.audio ? root.sink.audio.volume : 0) * 100) + "%"
+        onMoved: (v) => { if (root.sink && root.sink.audio) root.sink.audio.volume = v; }
+    }
 
     Rectangle {
         width: parent.width
@@ -162,6 +259,20 @@ Card {
         color: Theme.hair
     }
 
-    SinkRow { label: "Input"; device: "HyperX QuadCast"; chip: "Webcam Mic" }
-    VolRow { icon: "mic"; value: 0.55; valueLabel: "55%"; hasMic: true }
+    SinkRow {
+        label: "Input"
+        device: root.source ? (root.source.description ? root.source.description : root.source.name) : ""
+        chip: "Switch"
+        candidates: Pipewire.nodes.values.filter(n => !n.isSink && n.audio && n.isStream === false)
+        onSelected: (node) => { if (node) Pipewire.preferredDefaultAudioSource = node; }
+    }
+    VolRow {
+        icon: "mic"
+        value: root.source && root.source.audio ? root.source.audio.volume : 0
+        valueLabel: Math.round((root.source && root.source.audio ? root.source.audio.volume : 0) * 100) + "%"
+        hasMic: true
+        micMuted: root.source && root.source.audio ? root.source.audio.muted : false
+        onMoved: (v) => { if (root.source && root.source.audio) root.source.audio.volume = v; }
+        onMicToggled: { if (root.source && root.source.audio) root.source.audio.muted = !root.source.audio.muted; }
+    }
 }

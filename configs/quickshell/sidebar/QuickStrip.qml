@@ -1,17 +1,28 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Effects
+import Quickshell
+import Quickshell.Io
 import "Singletons"
 
 RowLayout {
     id: root
     property real s: 1
-    property bool dnd: true
-    property bool keepAwake: false
-    signal dndClicked()
-    signal keepClicked()
+    property bool opened: false
+    property bool dnd: false
 
     spacing: 10 * s
+
+    onOpenedChanged: if (opened) dndRead.running = true
+
+    Process {
+        id: dndRead
+        command: ["swaync-client", "-D"]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: root.dnd = (this.text.trim() === "true")
+        }
+    }
 
     component Pill: Rectangle {
         property bool active: false
@@ -97,13 +108,16 @@ RowLayout {
         icon: "bell"
         title: "Do Not Disturb"
         state: root.dnd ? "On" : "Off"
-        onClicked: root.dndClicked()
+        onClicked: {
+            Quickshell.execDetached(["swaync-client", "-d", "-sw"])
+            root.dnd = !root.dnd
+        }
     }
     Pill {
-        active: root.keepAwake
+        active: Store.keepAwake
         icon: "eye"
         title: "Keep Awake"
-        state: root.keepAwake ? "On" : "Off"
-        onClicked: root.keepClicked()
+        state: Store.keepAwake ? "On" : "Off"
+        onClicked: Store.keepAwake = !Store.keepAwake
     }
 }

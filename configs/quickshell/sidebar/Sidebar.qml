@@ -47,13 +47,13 @@ Item {
                 width: stack.width
                 spacing: 12 * sidebar.s
 
-                Header { s: sidebar.s; width: parent.width }
-                QuickStrip { s: sidebar.s; width: parent.width }
+                Header { s: sidebar.s; width: parent.width; opened: sidebar.opened }
+                QuickStrip { s: sidebar.s; width: parent.width; opened: sidebar.opened }
                 Network { s: sidebar.s; width: parent.width }
                 Bluetooth { s: sidebar.s; width: parent.width }
                 Audio { s: sidebar.s; width: parent.width }
-                Display { s: sidebar.s; width: parent.width }
-                Media { s: sidebar.s; width: parent.width }
+                Display { s: sidebar.s; width: parent.width; opened: sidebar.opened }
+                Media { s: sidebar.s; width: parent.width; opened: sidebar.opened }
             }
         }
     }

@@ -10,6 +10,38 @@ ShellRoot {
     property bool shown: false
     property string targetMonitor: ""
 
+    FileView {
+        id: vibState
+        path: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/ricelin/nvibrant-value"
+        blockLoading: true
+        printErrors: false
+    }
+
+    Component.onCompleted: {
+        var raw = vibState.text();
+        if (raw && raw.trim().length) {
+            var pct = parseInt(raw.trim());
+            if (!isNaN(pct)) {
+                var v = Math.round(pct * 1023 / 100);
+                Quickshell.execDetached(["nvibrant", String(v), "0", String(v)]);
+            }
+        }
+    }
+
+    PanelWindow {
+        id: inhibitWin
+        visible: Store.keepAwake
+        implicitWidth: 1
+        implicitHeight: 1
+        color: "transparent"
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.layer: WlrLayer.Background
+        WlrLayershell.namespace: "sidebar-inhibit"
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        anchors { top: true; left: true }
+        IdleInhibitor { window: inhibitWin; enabled: Store.keepAwake }
+    }
+
     IpcHandler {
         target: "sidebar"
         function show(mon: string): void {
