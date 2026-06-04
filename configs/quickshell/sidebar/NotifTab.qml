@@ -143,6 +143,10 @@ Column {
                         required property var modelData
                         required property int index
 
+                        readonly property var acts: notifItem.modelData.live
+                            ? notifItem.modelData.n.actions.filter(function(a) { return a.text.length > 0; })
+                            : []
+
                         width: parent.width
                         spacing: 11 * root.s
 
@@ -174,11 +178,11 @@ Column {
                                 Image {
                                     id: tileImg
                                     anchors.fill: parent
-                                    anchors.margins: notifItem.modelData.image ? 0 : 6 * root.s
-                                    source: notifItem.modelData.image
-                                        ? notifItem.modelData.image
-                                        : (notifItem.modelData.appIcon
-                                            ? Quickshell.iconPath(notifItem.modelData.appIcon, "")
+                                    anchors.margins: notifItem.modelData.n.image ? 0 : 6 * root.s
+                                    source: notifItem.modelData.n.image
+                                        ? notifItem.modelData.n.image
+                                        : (notifItem.modelData.n.appIcon
+                                            ? Quickshell.iconPath(notifItem.modelData.n.appIcon, "")
                                             : "")
                                     sourceSize.width: 64
                                     sourceSize.height: 64
@@ -194,7 +198,7 @@ Column {
                                     height: 8 * root.s
                                     radius: 2 * root.s
                                     rotation: 45
-                                    color: notifItem.modelData.urgency === NotificationUrgency.Critical
+                                    color: notifItem.modelData.n.urgency === NotificationUrgency.Critical
                                         ? Theme.vermLit : Theme.verm
                                 }
                             }
@@ -210,7 +214,7 @@ Column {
                                     Text {
                                         id: titleText
                                         width: parent.width - 34 * root.s
-                                        text: notifItem.modelData.summary
+                                        text: notifItem.modelData.n.summary
                                         color: Theme.cream
                                         font.family: Theme.font
                                         font.pixelSize: 12.5 * root.s
@@ -221,7 +225,7 @@ Column {
                                     Text {
                                         anchors.right: parent.right
                                         visible: !notifRow.hovered
-                                        text: Notifs.ageLabel(notifItem.modelData)
+                                        text: notifItem.modelData.live ? Notifs.ageLabel(notifItem.modelData.n) : ""
                                         color: Theme.faint
                                         font.family: Theme.font
                                         font.pixelSize: 9.5 * root.s
@@ -238,15 +242,17 @@ Column {
                                             anchors.fill: parent
                                             anchors.margins: -6 * root.s
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: notifItem.modelData.dismiss()
+                                            onClicked: notifItem.modelData.live
+                                                ? Notifs.dismissNotif(notifItem.modelData.n)
+                                                : Notifs.removeHistory(notifItem.modelData.n.id)
                                         }
                                     }
                                 }
 
                                 Text {
                                     width: parent.width
-                                    visible: notifItem.modelData.body.length > 0
-                                    text: notifItem.modelData.body
+                                    visible: notifItem.modelData.n.body.length > 0
+                                    text: notifItem.modelData.n.body
                                     color: Theme.dim
                                     font.family: Theme.font
                                     font.pixelSize: 11.5 * root.s
@@ -257,14 +263,14 @@ Column {
                                 }
 
                                 Rectangle {
-                                    visible: Notifs.progressOf(notifItem.modelData) >= 0
+                                    visible: notifItem.modelData.live && Notifs.progressOf(notifItem.modelData.n) >= 0
                                     width: parent.width
                                     height: 5 * root.s
                                     radius: 999
                                     color: Theme.trackBg
 
                                     Rectangle {
-                                        width: parent.width * Math.max(0, Notifs.progressOf(notifItem.modelData)) / 100
+                                        width: parent.width * Math.max(0, Notifs.progressOf(notifItem.modelData.n)) / 100
                                         height: parent.height
                                         radius: 999
                                         gradient: Gradient {
@@ -276,12 +282,12 @@ Column {
                                 }
 
                                 Row {
-                                    visible: notifItem.modelData.actions.length > 0
+                                    visible: notifItem.acts.length > 0
                                     spacing: 7 * root.s
                                     topPadding: 5 * root.s
 
                                     Repeater {
-                                        model: notifItem.modelData.actions
+                                        model: notifItem.acts
 
                                         Rectangle {
                                             id: actPill

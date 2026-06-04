@@ -9,6 +9,8 @@ Rectangle {
     required property var notif
     property real s: 1
 
+    readonly property var acts: notif.actions.filter(function(a) { return a.text.length > 0; })
+
     radius: 15 * s
     border.width: 1
     border.color: notif.urgency === NotificationUrgency.Critical ? Theme.vermLit : Theme.border
@@ -19,7 +21,7 @@ Rectangle {
     implicitHeight: body.implicitHeight + 28 * s
 
     Timer {
-        interval: toast.notif.urgency === NotificationUrgency.Low ? 4000 : 6000
+        interval: Math.max(300, (Notifs.expireAt[toast.notif.id] || 0) - Date.now())
         running: toast.notif.urgency !== NotificationUrgency.Critical
         onTriggered: Notifs.removePopup(toast.notif)
     }
@@ -113,12 +115,12 @@ Rectangle {
             }
 
             Row {
-                visible: toast.notif.actions.length > 0
+                visible: toast.acts.length > 0
                 spacing: 8 * toast.s
                 topPadding: 7 * toast.s
 
                 Repeater {
-                    model: toast.notif.actions
+                    model: toast.acts
 
                     Rectangle {
                         id: actPill
