@@ -54,8 +54,8 @@ Item {
     readonly property real launcherH: 332 * s
     readonly property real powerW: 330 * s
     readonly property real powerH: 150 * s
-    readonly property real mediaW: 360 * s
-    readonly property real mediaH: 134 * s
+    readonly property real mediaW: 384 * s
+    readonly property real mediaH: 150 * s
     readonly property real restCorner: 18 * s
     readonly property real openCorner: 22 * s
 
@@ -634,11 +634,8 @@ Item {
     Media {
         id: media
         anchors.fill: parent
-        anchors.topMargin: 15 * pill.s
-        anchors.leftMargin: 16 * pill.s
-        anchors.rightMargin: 16 * pill.s
-        anchors.bottomMargin: 15 * pill.s
         s: pill.s
+        radius: pill.morphRadius
         active: pill.mediaOpen
         enabled: pill.mediaOpen
         opacity: pill.mediaOpen ? 1 : 0
