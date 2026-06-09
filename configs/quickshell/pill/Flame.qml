@@ -49,9 +49,18 @@ Item {
     property var hist: []
     function pushHistory() {
         hist.unshift(Qt.point(px, py));
-        if (hist.length > 24) hist.pop();
+        if (hist.length > 28) hist.pop();
         histChanged();
     }
+
+    function syncPoint() {
+        const p = pathPoint(t);
+        px = p.x;
+        py = p.y;
+    }
+
+    onPillWChanged: if (mode === "held") syncPoint()
+    onPillHChanged: if (mode === "held") syncPoint()
 
     property real flyT: 0
     property point flyStart: Qt.point(0, 0)
@@ -63,6 +72,10 @@ Item {
             flyCtrl = Qt.point((px + flyTarget.x) / 2, Math.min(py, flyTarget.y) - pillH);
             flyT = 0;
             flyAnim.restart();
+        } else {
+            hist = [];
+            if (mode === "held" || mode === "orbit")
+                syncPoint();
         }
     }
 
@@ -98,17 +111,17 @@ Item {
     }
 
     Repeater {
-        model: 6
+        model: 13
         delegate: Rectangle {
             id: trailDot
             required property int index
 
-            readonly property int slot: index * 3
+            readonly property int slot: index * 2
             readonly property var pt: root.hist.length > slot ? root.hist[slot] : null
-            readonly property real f: index / 6
-            readonly property real sz: (5 - 3.4 * f) * root.s
+            readonly property real f: index / 13
+            readonly property real sz: (5.5 - 4.5 * f) * root.s
 
-            visible: pt !== null && root.mode !== "fly"
+            visible: pt !== null && root.mode === "orbit"
             width: sz
             height: sz
             radius: sz / 2
@@ -116,7 +129,7 @@ Item {
             x: pt ? pt.x - sz / 2 : 0
             y: pt ? pt.y - sz / 2 : 0
             color: Qt.rgba(Theme.flameGlow.r, Theme.flameGlow.g, Theme.flameGlow.b,
-                           Math.pow(1 - f, 1.7) * 0.85)
+                           Math.pow(1 - f, 1.5) * 0.8)
         }
     }
 
