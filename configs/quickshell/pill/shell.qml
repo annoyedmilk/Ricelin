@@ -66,6 +66,7 @@ ShellRoot {
         function mixer(mon: string): void { root.toggleSurface(mon, "mixer"); }
         function calendar(mon: string): void { root.toggleSurface(mon, "calendar"); }
         function launcher(mon: string): void { root.toggleSurface(mon, "launcher"); }
+        function power(mon: string): void { root.toggleSurface(mon, "power"); }
         function peek(mon: string): void { root.peek(mon); }
         function hide(): void { root.close(); }
     }

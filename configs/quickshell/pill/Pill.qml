@@ -34,6 +34,7 @@ Item {
     readonly property bool mixerOpen: surface === "mixer"
     readonly property bool calendarOpen: surface === "calendar"
     readonly property bool launcherOpen: surface === "launcher"
+    readonly property bool powerOpen: surface === "power"
     readonly property bool surfaceOpen: surface.length > 0
     readonly property bool expanded: surfaceOpen || held || hovered
 
@@ -48,12 +49,15 @@ Item {
     readonly property real calendarH: 262 * s
     readonly property real launcherW: 360 * s
     readonly property real launcherH: 332 * s
+    readonly property real powerW: 330 * s
+    readonly property real powerH: 150 * s
     readonly property real restCorner: 18 * s
     readonly property real openCorner: 22 * s
 
     readonly property string mode: calendarOpen ? "calendar"
         : (launcherOpen ? "launcher"
-        : (mixerOpen ? "mixer" : (expanded ? "hover" : "rest")))
+        : (powerOpen ? "power"
+        : (mixerOpen ? "mixer" : (expanded ? "hover" : "rest"))))
 
     signal requestSurface(string name)
     signal requestClose()
@@ -93,14 +97,16 @@ Item {
         running: !pill.expanded
     }
 
-    property real morphRadius: (mixerOpen || calendarOpen || launcherOpen) ? openCorner : restCorner
+    property real morphRadius: (mixerOpen || calendarOpen || launcherOpen || powerOpen) ? openCorner : restCorner
 
     width: mode === "calendar" ? calendarW
         : mode === "launcher" ? launcherW
+        : mode === "power" ? powerW
         : mode === "mixer" ? mixerW
         : mode === "hover" ? hoverW : restW
     height: mode === "calendar" ? calendarH
         : mode === "launcher" ? launcherH
+        : mode === "power" ? powerH
         : mode === "mixer" ? mixerH
         : mode === "hover" ? hoverH : restH
 
@@ -520,6 +526,30 @@ Item {
                         onClicked: pill.requestSurface("mixer")
                     }
                 }
+
+                Item {
+                    id: powerIcon
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 16 * pill.s
+                    height: 16 * pill.s
+
+                    GlyphIcon {
+                        anchors.fill: parent
+                        name: "shutdown"
+                        color: powerArea.containsMouse ? Theme.vermLit : Theme.faint
+                        stroke: 1.7
+                    }
+
+                    MouseArea {
+                        id: powerArea
+                        anchors.fill: parent
+                        anchors.margins: -6 * pill.s
+                        hoverEnabled: true
+                        enabled: hover.live
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: pill.requestSurface("power")
+                    }
+                }
             }
         }
     }
@@ -567,6 +597,23 @@ Item {
         active: pill.launcherOpen
         enabled: pill.launcherOpen
         opacity: pill.launcherOpen ? 1 : 0
+        Behavior on opacity {
+            NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
+        }
+        onRequestClose: pill.requestClose()
+    }
+
+    Power {
+        id: power
+        anchors.fill: parent
+        anchors.topMargin: 15 * pill.s
+        anchors.leftMargin: 17 * pill.s
+        anchors.rightMargin: 17 * pill.s
+        anchors.bottomMargin: 14 * pill.s
+        s: pill.s
+        active: pill.powerOpen
+        enabled: pill.powerOpen
+        opacity: pill.powerOpen ? 1 : 0
         Behavior on opacity {
             NumberAnimation { duration: 220; easing.type: Easing.OutCubic }
         }
