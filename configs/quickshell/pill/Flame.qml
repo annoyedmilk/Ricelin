@@ -46,13 +46,6 @@ Item {
         return Qt.point(r - r * Math.sin(q), r + r * Math.cos(q));
     }
 
-    property var hist: []
-    function pushHistory() {
-        hist.unshift(Qt.point(px, py));
-        if (hist.length > 28) hist.pop();
-        histChanged();
-    }
-
     function syncPoint() {
         const p = pathPoint(t);
         px = p.x;
@@ -72,10 +65,8 @@ Item {
             flyCtrl = Qt.point((px + flyTarget.x) / 2, Math.min(py, flyTarget.y) - pillH);
             flyT = 0;
             flyAnim.restart();
-        } else {
-            hist = [];
-            if (mode === "held" || mode === "orbit")
-                syncPoint();
+        } else if (mode === "held" || mode === "orbit") {
+            syncPoint();
         }
     }
 
@@ -96,10 +87,7 @@ Item {
             root.t += frameTime * (root.musicActive ? 0.085 : 0.03);
             if (root.t > 1)
                 root.t -= 1;
-            const p = root.pathPoint(root.t);
-            root.px = p.x;
-            root.py = p.y;
-            root.pushHistory();
+            root.syncPoint();
         }
     }
 
@@ -110,32 +98,47 @@ Item {
         py = u * u * flyStart.y + 2 * u * flyT * flyCtrl.y + flyT * flyT * flyTarget.y;
     }
 
+    readonly property int trailCount: 22
+    readonly property real trailStep: 0.0055
+
     Repeater {
-        model: 13
+        model: root.trailCount
         delegate: Rectangle {
             id: trailDot
             required property int index
 
-            readonly property int slot: index * 2
-            readonly property var pt: root.hist.length > slot ? root.hist[slot] : null
-            readonly property real f: index / 13
-            readonly property real sz: (5.5 - 4.5 * f) * root.s
+            readonly property real f: (index + 1) / root.trailCount
+            readonly property point pt: root.pathPoint(root.t - (index + 1) * root.trailStep)
+            readonly property real sz: (5 - 4 * f) * root.s
+            readonly property color tint: f < 0.35 ? Theme.flameGlow : (f < 0.7 ? Theme.vermLit : Theme.verm)
 
-            visible: pt !== null && root.mode === "orbit"
+            visible: root.mode === "orbit"
             width: sz
             height: sz
             radius: sz / 2
             antialiasing: true
-            x: pt ? pt.x - sz / 2 : 0
-            y: pt ? pt.y - sz / 2 : 0
-            color: Qt.rgba(Theme.flameGlow.r, Theme.flameGlow.g, Theme.flameGlow.b,
-                           Math.pow(1 - f, 1.5) * 0.8)
+            x: pt.x - sz / 2
+            y: pt.y - sz / 2
+            color: Qt.rgba(tint.r, tint.g, tint.b, Math.pow(1 - f, 1.35) * 0.85)
         }
     }
 
     Rectangle {
+        id: halo
+        readonly property real sz: head.sz * 2.8
+        visible: root.mode === "held"
+        width: sz
+        height: sz
+        radius: sz / 2
+        antialiasing: true
+        x: root.px - sz / 2
+        y: root.py - sz / 2
+        color: Qt.rgba(Theme.vermLit.r, Theme.vermLit.g, Theme.vermLit.b, 0.3)
+    }
+
+    Rectangle {
         id: head
-        readonly property real sz: (6 + 3 * root.pulse) * root.s
+        readonly property real sz: ((root.mode === "held" ? 9 : 6) + 3 * root.pulse) * root.s
         width: sz
         height: sz
         radius: sz / 2
