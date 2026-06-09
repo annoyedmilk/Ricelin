@@ -155,15 +155,23 @@ Item {
             PathArc { x: pill.restCorner; y: 0; radiusX: pill.restCorner; radiusY: pill.restCorner }
         }
 
+        readonly property int trailCount: 26
+        readonly property real trailStep: 0.0052
+        readonly property var trail: {
+            var a = [];
+            for (var k = 0; k < comet.trailCount; k++) {
+                var t = k / (comet.trailCount - 1);
+                a.push({
+                    behind: k * comet.trailStep,
+                    rad: 2.5 - 1.9 * t,
+                    a: Math.pow(1 - t, 1.7)
+                });
+            }
+            return a;
+        }
+
         Repeater {
-            model: [
-                { behind: 0.000, rad: 2.7, a: 1.00 },
-                { behind: 0.022, rad: 2.4, a: 0.58 },
-                { behind: 0.044, rad: 2.1, a: 0.36 },
-                { behind: 0.066, rad: 1.8, a: 0.21 },
-                { behind: 0.090, rad: 1.5, a: 0.11 },
-                { behind: 0.116, rad: 1.2, a: 0.05 }
-            ]
+            model: comet.trail
 
             delegate: Item {
                 id: spark
@@ -191,10 +199,27 @@ Item {
             }
         }
 
+        Rectangle {
+            id: head
+            width: 5.4 * pill.s
+            height: width
+            radius: width / 2
+            antialiasing: true
+            x: headPath.x - width / 2
+            y: headPath.y - height / 2
+            color: Theme.onAccent
+
+            PathInterpolator {
+                id: headPath
+                path: ring
+                progress: pill.cometFrac
+            }
+        }
+
         layer.enabled: true
         layer.effect: MultiEffect {
             blurEnabled: true
-            blur: 0.45
+            blur: 0.42
             blurMax: 10
         }
     }
