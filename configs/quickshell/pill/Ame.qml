@@ -39,6 +39,8 @@ Item {
     property point point: Qt.point(0, 0)
     property string form: "rest"
     property real heat: 0
+    property point wake: Qt.point(0, 0)
+    property real wickDir: -1
 
     opacity: form === "off" ? 0 : 1
     Behavior on opacity { NumberAnimation { duration: Motion.fast } }
@@ -150,17 +152,24 @@ Item {
     }
 
     /**
-     * Re-show after a hidden ("off") period: geometry may have drifted while
-     * point changes were ignored, so snap to the current anchor and pop in with
-     * the settle act instead of flying from a stale origin.
+     * Wake from the hidden ("off") state. The soul sleeps in the 時 kanji, so
+     * re-shows start at the wake anchor: the bead condenses there and flies to
+     * its target when it is far, or pops in place when it is near. Stale
+     * positions from before the hidden period never leak in.
      */
     function appear() {
         stopGlide();
         remnantAnim.stop();
         remnant = 0;
-        bx = point.x;
-        by = point.y;
-        startMorph(form);
+        bx = wake.x;
+        by = wake.y;
+        if (Math.hypot(point.x - bx, point.y - by) > root.flightThreshold) {
+            startFlight(form);
+        } else {
+            bx = point.x;
+            by = point.y;
+            startMorph(form);
+        }
     }
 
     function retarget() {
@@ -380,14 +389,6 @@ Item {
             ctx.restore();
         }
 
-        function underGlow(ctx, x, y) {
-            const ug = ctx.createRadialGradient(x, y + 3 * root.s, 0, x, y + 3 * root.s, 22 * root.s);
-            ug.addColorStop(0, Qt.rgba(Theme.flameGlow.r, Theme.flameGlow.g, Theme.flameGlow.b, 0.2));
-            ug.addColorStop(1, Qt.rgba(Theme.flameGlow.r, Theme.flameGlow.g, Theme.flameGlow.b, 0));
-            ctx.fillStyle = ug;
-            ctx.fillRect(x - 22 * root.s, y - 19 * root.s, 44 * root.s, 44 * root.s);
-        }
-
         onPaint: {
             const ctx = getContext("2d");
             ctx.reset();
@@ -467,7 +468,6 @@ Item {
             const f = root.activeForm;
 
             if (f === "caret") {
-                underGlow(ctx, bx, by);
                 const blink = settling ? 1 : (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(root.swirl * 5.7)));
                 const hgt = 15 * S * e;
                 const wdt = (2.5 + 6 * (1 - fadeIn)) * S;
@@ -484,7 +484,6 @@ Item {
             }
 
             if (f === "seam") {
-                underGlow(ctx, bx, by);
                 const R = (3.5 + 1.5 * (1 - fadeIn)) * S;
                 const sg2 = ctx.createRadialGradient(bx, by, 0, bx, by, 12 * S);
                 sg2.addColorStop(0, Qt.rgba(1, 0.851, 0.761, 0.9 * fadeIn));
@@ -493,6 +492,66 @@ Item {
                 ctx.fillStyle = sg2;
                 ctx.fillRect(bx - 12 * S, by - 12 * S, 24 * S, 24 * S);
                 bead(ctx, bx, by, R * (settling ? (0.8 + 0.2 * e) : 1), 0, 0);
+                return;
+            }
+
+            if (f === "soul") {
+                const r = 2.8 * S * (settling ? (0.7 + 0.3 * e) : 1);
+                const wl = 7 * S * fadeIn;
+                const wy0 = by + root.wickDir * (r + 1.5 * S);
+                const wg = ctx.createLinearGradient(0, wy0, 0, wy0 + root.wickDir * wl);
+                wg.addColorStop(0, Qt.rgba(1, 0.851, 0.761, 0.55 * fadeIn));
+                wg.addColorStop(1, Qt.rgba(0.878, 0.337, 0.231, 0));
+                ctx.beginPath();
+                ctx.moveTo(bx, wy0);
+                ctx.lineTo(bx, wy0 + root.wickDir * wl);
+                ctx.strokeStyle = wg;
+                ctx.lineWidth = 1.1 * S;
+                ctx.lineCap = "round";
+                ctx.stroke();
+                bead(ctx, bx, by, r, settling ? (1 - q) * 0.3 : 0, 0);
+                return;
+            }
+
+            if (f === "tick") {
+                const rx = 5.5 * S * (settling ? (0.75 + 0.25 * e) : 1);
+                const ry = 3.1 * S;
+                ctx.save();
+                ctx.translate(bx, by);
+                ctx.scale(rx / ry, 1);
+                const tg = ctx.createRadialGradient(-ry * 0.3, -ry * 0.35, 0, 0, 0, ry);
+                tg.addColorStop(0, "#f0795a");
+                tg.addColorStop(0.55, Theme.vermLit);
+                tg.addColorStop(0.92, Theme.verm);
+                tg.addColorStop(1, "#7e2812");
+                ctx.beginPath();
+                ctx.arc(0, 0, ry, 0, 7);
+                ctx.fillStyle = tg;
+                ctx.globalAlpha = Math.max(0.25, fadeIn);
+                ctx.fill();
+                ctx.restore();
+                ctx.beginPath();
+                ctx.ellipse(bx - rx * 0.55, by - ry * 0.75, rx * 0.55, ry * 0.4);
+                ctx.fillStyle = Qt.rgba(1, 0.965, 0.941, 0.55 * fadeIn);
+                ctx.fill();
+                return;
+            }
+
+            if (f === "rowseam") {
+                const sh = 18 * S * (settling ? (0.6 + 0.4 * e) : 1);
+                const sw = 2.6 * S;
+                const sg3 = ctx.createLinearGradient(0, by - sh / 2, 0, by + sh / 2);
+                sg3.addColorStop(0, Qt.rgba(0.753, 0.267, 0.169, 0.25 * fadeIn));
+                sg3.addColorStop(0.5, Theme.flameCore);
+                sg3.addColorStop(1, Qt.rgba(0.753, 0.267, 0.169, 0.25 * fadeIn));
+                ctx.beginPath();
+                ctx.roundedRect(bx - sw / 2, by - sh / 2, sw, sh, sw / 2, sw / 2);
+                ctx.fillStyle = sg3;
+                ctx.globalAlpha = Math.max(0.3, fadeIn);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                if (fadeIn < 0.7)
+                    bead(ctx, bx, by, 2.6 * S * (1 - fadeIn), 0, 0, 1 - fadeIn * 1.3);
                 return;
             }
 
@@ -514,7 +573,6 @@ Item {
                 return;
             }
 
-            underGlow(ctx, bx, by);
             const land = settling ? (0.7 + 0.3 * e) : 1;
             const breathe = (f === "rest") ? canvas.breathe : 1;
             const r = baseR * breathe * land * (f === "dock" ? root.heatScale : 1);

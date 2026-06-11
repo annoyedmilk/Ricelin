@@ -151,6 +151,65 @@ Item {
     Behavior on morphRadius { NumberAnimation { duration: Motion.morph; easing.type: Motion.easeMorph } }
 
     Rectangle {
+        id: bud
+        readonly property bool shown: pill.mode === "hover" && pill.hasMedia
+        property real budR: (budArea.containsMouse ? 15 : 12) * pill.s
+        width: budR * 2
+        height: budR * 2
+        radius: budR
+        x: pill.width - budR
+        anchors.verticalCenter: parent.verticalCenter
+        visible: opacity > 0.01
+        opacity: shown ? 1 : 0
+        border.width: 1
+        border.color: Theme.border
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: Theme.cardTop }
+            GradientStop { position: 1.0; color: Theme.cardBot }
+        }
+        Behavior on budR { NumberAnimation { duration: Motion.fast; easing.type: Motion.easeStandard } }
+        Behavior on opacity { NumberAnimation { duration: Motion.standard } }
+
+        Canvas {
+            id: budBead
+            anchors.centerIn: parent
+            anchors.horizontalCenterOffset: 3 * pill.s
+            width: 18 * pill.s
+            height: 18 * pill.s
+            onPaint: {
+                const ctx = getContext("2d");
+                ctx.reset();
+                const c = width / 2;
+                const R = (budArea.containsMouse ? 5.2 : 4) * pill.s;
+                const hg = ctx.createRadialGradient(c - R * 0.32, c - R * 0.38, 0, c, c, R);
+                hg.addColorStop(0, "#f0795a");
+                hg.addColorStop(0.55, Theme.vermLit);
+                hg.addColorStop(0.92, Theme.verm);
+                hg.addColorStop(1, "#7e2812");
+                ctx.beginPath();
+                ctx.arc(c, c, R, 0, 7);
+                ctx.fillStyle = hg;
+                ctx.fill();
+                ctx.beginPath();
+                ctx.ellipse(c - R * 0.62, c - R * 0.66, R * 0.6, R * 0.36);
+                ctx.fillStyle = "rgba(255,246,240,0.6)";
+                ctx.fill();
+            }
+        }
+
+        MouseArea {
+            id: budArea
+            anchors.fill: parent
+            anchors.rightMargin: bud.budR
+            enabled: bud.shown
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: pill.requestSurface("media")
+            onContainsMouseChanged: budBead.requestPaint()
+        }
+    }
+
+    Rectangle {
         id: body
         anchors.fill: parent
         radius: pill.morphRadius
@@ -181,17 +240,52 @@ Item {
         }
     }
 
+    /**
+     * Anchor of the sleeping soul: the 時 kanji centre. Ame wakes here — the
+     * idle outline condenses into the bead at this point before it flies.
+     */
+    readonly property point wakePoint: {
+        void pill.width;
+        void pill.height;
+        return restKanji.mapToItem(pill, restKanji.width / 2, restKanji.height / 2);
+    }
+
+    /**
+     * Focus-cursor target while hovered: the hovered status icon or workspace
+     * dot wins, otherwise the active workspace dot is home. containsMouse and
+     * the Workspaces points are live dependencies; pill geometry is voided so
+     * the anchor follows the hover morph.
+     */
+    readonly property point soulPoint: {
+        void pill.width;
+        void pill.height;
+        const drop = 12 * pill.s;
+        if (inboxArea.containsMouse)
+            return inboxIcon.mapToItem(pill, inboxIcon.width / 2, inboxIcon.height + drop * 0.55);
+        if (mixerArea.containsMouse)
+            return mixerIcon.mapToItem(pill, mixerIcon.width / 2, mixerIcon.height + drop * 0.55);
+        if (powerArea.containsMouse)
+            return powerIcon.mapToItem(pill, powerIcon.width / 2, powerIcon.height + drop * 0.55);
+        if (ws.hoverIndex >= 0)
+            return ws.mapToItem(pill, ws.hoverDotPoint.x, ws.hoverDotPoint.y + drop);
+        return ws.mapToItem(pill, ws.activeDotPoint.x, ws.activeDotPoint.y + drop);
+    }
+
     Ame {
         id: ame
         anchors.fill: parent
         s: pill.s
         heat: pill.powerOpen ? power.holdProgress : 0
+        wake: pill.wakePoint
+        wickDir: pill.powerOpen ? 1 : -1
         form: pill.mediaOpen ? "seam"
             : (pill.launcherOpen || pill.clipboardOpen ? "caret"
             : (pill.calendarOpen ? (calendar.todayVisible ? "ring" : "dock")
-            : (pill.mixerOpen || pill.powerOpen || pill.linkOpen ? "dock"
-            : (pill.mode === "toast" || pill.mode === "osd" ? "off"
-            : "rest"))))
+            : (pill.mixerOpen ? "tick"
+            : (pill.powerOpen ? (power.holdingIndex >= 0 ? "dock" : (power.hovered.length ? "soul" : "off"))
+            : (pill.linkOpen ? (link.rowFocused ? "rowseam" : "off")
+            : (pill.mode === "hover" ? "soul"
+            : "off"))))))
         point: pill.mediaOpen
             ? Qt.point(media.x + media.seamHeadX, media.y + media.seamHeadY)
             : (pill.launcherOpen
@@ -207,8 +301,10 @@ Item {
             : (pill.powerOpen
             ? Qt.point(power.x + power.heatX, power.y + power.heatY)
             : (pill.linkOpen
-            ? Qt.point(link.x + link.emberX, link.y + link.emberY)
-            : Qt.point(pill.width - 14 * pill.s, pill.height / 2)))))))
+            ? Qt.point(link.x + link.rowPoint.x, link.y + link.rowPoint.y)
+            : (pill.mode === "hover"
+            ? pill.soulPoint
+            : pill.wakePoint)))))))
     }
 
     HoverHandler {
@@ -242,19 +338,23 @@ Item {
         anchors.fill: parent
         opacity: (pill.expanded || pill.mode === "toast" || pill.mode === "osd") ? 0 : 1
         visible: opacity > 0.01
-        Behavior on opacity { NumberAnimation { duration: 150 } }
+        Behavior on opacity { NumberAnimation { duration: Motion.standard } }
 
         Row {
             id: restRow
             anchors.centerIn: parent
             spacing: 9 * pill.s
             Text {
+                id: restKanji
                 anchors.verticalCenter: parent.verticalCenter
                 text: "時"
                 color: Theme.dim
                 font.family: Theme.fontJp
                 font.weight: Font.Medium
                 font.pixelSize: 15 * pill.s
+                style: Text.Outline
+                styleColor: Qt.alpha(Theme.vermLit, pill.mode === "rest" ? 0.32 : 0)
+                Behavior on styleColor { ColorAnimation { duration: Motion.standard } }
             }
             Text {
                 anchors.verticalCenter: parent.verticalCenter
@@ -273,7 +373,7 @@ Item {
         anchors.fill: parent
         opacity: pill.mode === "hover" ? 1 : 0
         visible: opacity > 0.01
-        Behavior on opacity { NumberAnimation { duration: 150 } }
+        Behavior on opacity { NumberAnimation { duration: Motion.standard } }
 
         readonly property bool live: pill.mode === "hover"
 
@@ -517,7 +617,7 @@ Item {
         opacity: pill.mixerOpen ? 1 : 0
         visible: opacity > 0.01
         Behavior on opacity {
-            NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Motion.standard; easing.type: Easing.OutCubic }
         }
     }
 
@@ -534,7 +634,7 @@ Item {
         opacity: pill.calendarOpen ? 1 : 0
         visible: opacity > 0.01
         Behavior on opacity {
-            NumberAnimation { duration: 260; easing.type: Easing.OutCubic }
+            NumberAnimation { duration: Motion.standard; easing.type: Easing.OutCubic }
         }
     }
 
@@ -684,13 +784,4 @@ Item {
         }
     }
 
-    MouseArea {
-        visible: ame.form === "rest" && pill.hasMedia
-        x: ame.bx - 16 * pill.s
-        y: ame.by - 16 * pill.s
-        width: 32 * pill.s
-        height: 32 * pill.s
-        cursorShape: Qt.PointingHandCursor
-        onClicked: pill.requestSurface("media")
-    }
 }

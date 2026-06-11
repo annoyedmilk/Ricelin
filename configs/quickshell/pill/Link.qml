@@ -37,6 +37,32 @@ Item {
     readonly property real emberX: emberPoint.x
     readonly property real emberY: emberPoint.y
 
+    /**
+     * Row-soul focus registry. Each hoverable row reports itself here; the bead
+     * docks as a glowing seam at the left edge of the focused row and hides
+     * when nothing is focused. Only the main subview participates.
+     */
+    property Item focusRowItem: null
+
+    function reportRowHover(item, hovered) {
+        if (hovered)
+            focusRowItem = item;
+        else if (focusRowItem === item)
+            focusRowItem = null;
+    }
+
+    readonly property bool rowFocused: focusRowItem !== null && subview === "main" && active
+
+    readonly property point rowPoint: {
+        void root.width;
+        void root.height;
+        void mainCol.implicitHeight;
+        void root.focusRowItem;
+        if (!focusRowItem)
+            return Qt.point(8 * s, root.height / 2);
+        return focusRowItem.mapToItem(root, 9 * s, focusRowItem.height / 2);
+    }
+
     implicitHeight: subview === "wifi" ? wifiPage.implicitHeight
         : subview === "bt" ? btPage.implicitHeight
         : mainCol.implicitHeight
@@ -102,6 +128,7 @@ Item {
             seenTimer.restart();
         } else {
             seenTimer.stop();
+            focusRowItem = null;
         }
     }
 
@@ -206,7 +233,10 @@ Item {
         radius: 7 * root.s
         color: nrowHover.hovered ? Theme.frameBg : "transparent"
 
-        HoverHandler { id: nrowHover }
+        HoverHandler {
+            id: nrowHover
+            onHoveredChanged: root.reportRowHover(nrow, hovered)
+        }
 
         MouseArea {
             anchors.fill: parent
@@ -427,7 +457,10 @@ Item {
                 radius: 10 * root.s
                 color: netzHover.hovered ? Theme.frameBg : "transparent"
 
-                HoverHandler { id: netzHover }
+                HoverHandler {
+                    id: netzHover
+                    onHoveredChanged: root.reportRowHover(netzRow, hovered)
+                }
 
                 MouseArea {
                     anchors.fill: parent
@@ -518,7 +551,10 @@ Item {
                 radius: 10 * root.s
                 color: btHover.hovered ? Theme.frameBg : "transparent"
 
-                HoverHandler { id: btHover }
+                HoverHandler {
+                    id: btHover
+                    onHoveredChanged: root.reportRowHover(btRow, hovered)
+                }
 
                 MouseArea {
                     anchors.fill: parent

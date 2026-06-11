@@ -36,6 +36,34 @@ Item {
         return "";
     }
 
+    property int hoverIndex: -1
+
+    readonly property int activeIndex: range.indexOf(parseInt(activeName))
+
+    /**
+     * Centre x of a dot slot from target layout widths (the active stick is
+     * wider). Uses the animation end values, so a focus marker aimed here lands
+     * where the dot settles rather than chasing the width Behavior.
+     */
+    function slotCenterX(idx) {
+        let x = 0;
+        for (let i = 0; i < idx; i++)
+            x += (i === activeIndex ? stickW : dotW) + gap;
+        return x + (idx === activeIndex ? stickW : dotW) / 2;
+    }
+
+    readonly property point activeDotPoint: {
+        void workspaces.activeName;
+        void workspaces.width;
+        return Qt.point(slotCenterX(Math.max(0, activeIndex)), height / 2);
+    }
+    readonly property point hoverDotPoint: {
+        void workspaces.activeName;
+        void workspaces.width;
+        void workspaces.hoverIndex;
+        return Qt.point(slotCenterX(Math.max(0, hoverIndex)), height / 2);
+    }
+
     implicitWidth: row.implicitWidth
     implicitHeight: row.implicitHeight
 
@@ -52,6 +80,7 @@ Item {
                 id: slot
 
                 required property var modelData
+                required property int index
 
                 readonly property string wsName: String(modelData)
                 readonly property bool isActive: workspaces.activeName === wsName
@@ -76,6 +105,12 @@ Item {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: Hyprland.dispatch('hl.dsp.focus({workspace="' + slot.wsName + '"})')
+                    onContainsMouseChanged: {
+                        if (containsMouse)
+                            workspaces.hoverIndex = slot.index;
+                        else if (workspaces.hoverIndex === slot.index)
+                            workspaces.hoverIndex = -1;
+                    }
                 }
             }
         }

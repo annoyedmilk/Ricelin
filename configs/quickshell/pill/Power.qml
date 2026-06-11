@@ -28,8 +28,10 @@ Item {
     readonly property real anchorY: tiles.y - 10 * root.s
     property real tileHeatX: 0
     property real tileHeatY: 0
-    readonly property real heatX: holdingIndex >= 0 ? tileHeatX : anchorX
-    readonly property real heatY: holdingIndex >= 0 ? tileHeatY : anchorY
+    property real hoverX: 0
+    property real hoverY: 0
+    readonly property real heatX: holdingIndex >= 0 ? tileHeatX : (hovered.length ? hoverX : anchorX)
+    readonly property real heatY: holdingIndex >= 0 ? tileHeatY : (hovered.length ? hoverY : anchorY)
 
     readonly property var actions: [
         { key: "lock",     glyph: "lock",     label: "Lock",     confirm: false, dispatch: "",             argv: ["sh", "-c", "$HOME/.config/hypr/scripts/lock.sh"] },
@@ -189,7 +191,12 @@ Item {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onEntered: root.hovered = cell.modelData.key
+                        onEntered: {
+                            root.hovered = cell.modelData.key;
+                            const c = tile.mapToItem(root, tile.width / 2, 0);
+                            root.hoverX = c.x;
+                            root.hoverY = c.y - 9 * root.s;
+                        }
                         onExited: {
                             if (root.hovered === cell.modelData.key)
                                 root.hovered = "";
