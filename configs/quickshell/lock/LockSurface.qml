@@ -1,5 +1,7 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
-import "Singletons"
+import Quickshell
 
 Item {
     id: surface
@@ -7,89 +9,227 @@ Item {
     property var auth: null
     property string screenName: ""
 
-    readonly property int blurDiv: 14
-    readonly property size blurRes: Qt.size(Math.max(2, Math.round(width / blurDiv)), Math.max(2, Math.round(height / blurDiv)))
-    readonly property vector2d blurResVec: Qt.vector2d(blurRes.width, blurRes.height)
+    readonly property bool isMain: {
+        var scr = Quickshell.screens;
+        for (var i = 0; i < scr.length; i++)
+            if (scr[i] && scr[i].name === "DP-1")
+                return surface.screenName === "DP-1";
+        return true;
+    }
+
+    readonly property real spread: 2.4
+    readonly property size half: Qt.size(Math.max(2, Math.round(width / 2)), Math.max(2, Math.round(height / 2)))
+    readonly property size quarter: Qt.size(Math.max(2, Math.round(width / 4)), Math.max(2, Math.round(height / 4)))
+    readonly property size eighth: Qt.size(Math.max(2, Math.round(width / 8)), Math.max(2, Math.round(height / 8)))
+    readonly property vector2d eighthVec: Qt.vector2d(eighth.width, eighth.height)
 
     clip: true
 
     Image {
         id: bgImg
         anchors.fill: parent
-        source: surface.screenName.length > 0 ? "file:///tmp/ricelin-lock-" + surface.screenName + ".png" : "file:///tmp/lock-dev-sharp.jpg"
+        source: {
+            if (surface.screenName.length === 0)
+                return "";
+            var dir = Quickshell.env("XDG_RUNTIME_DIR") || "/tmp";
+            return "file://" + dir + "/ricelin-lock-" + surface.screenName + ".png";
+        }
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
         cache: false
         visible: false
     }
 
     ShaderEffectSource {
-        id: bgSrc
+        id: downHalf
         anchors.fill: parent
         sourceItem: bgImg
-        textureSize: surface.blurRes
+        textureSize: surface.half
+        smooth: true
         hideSource: true
-        live: false
+        visible: false
     }
 
     ShaderEffect {
-        id: blurH
+        id: copyHalf
         anchors.fill: parent
         visible: false
-        property var source: bgSrc
-        property vector2d resolution: surface.blurResVec
+        property var source: downHalf
+    }
+
+    ShaderEffectSource {
+        id: downQuarter
+        anchors.fill: parent
+        sourceItem: copyHalf
+        textureSize: surface.quarter
+        smooth: true
+        hideSource: true
+        visible: false
+    }
+
+    ShaderEffect {
+        id: copyQuarter
+        anchors.fill: parent
+        visible: false
+        property var source: downQuarter
+    }
+
+    ShaderEffectSource {
+        id: downEighth
+        anchors.fill: parent
+        sourceItem: copyQuarter
+        textureSize: surface.eighth
+        smooth: true
+        hideSource: true
+        visible: false
+    }
+
+    ShaderEffect {
+        id: blurH1
+        anchors.fill: parent
+        visible: false
+        property var source: downEighth
+        property vector2d resolution: surface.eighthVec
         property vector2d blurDir: Qt.vector2d(1, 0)
+        property real spread: surface.spread
         fragmentShader: "shaders/blur.frag.qsb"
     }
 
     ShaderEffectSource {
-        id: blurHSrc
+        id: blurH1Src
         anchors.fill: parent
-        sourceItem: blurH
-        textureSize: surface.blurRes
+        sourceItem: blurH1
+        textureSize: surface.eighth
+        smooth: true
         hideSource: true
-        live: true
+        visible: false
     }
 
     ShaderEffect {
-        id: blurV
+        id: blurV1
         anchors.fill: parent
         visible: false
-        property var source: blurHSrc
-        property vector2d resolution: surface.blurResVec
+        property var source: blurH1Src
+        property vector2d resolution: surface.eighthVec
         property vector2d blurDir: Qt.vector2d(0, 1)
+        property real spread: surface.spread
         fragmentShader: "shaders/blur.frag.qsb"
     }
 
     ShaderEffectSource {
-        id: blurVSrc
+        id: blurV1Src
         anchors.fill: parent
-        sourceItem: blurV
-        textureSize: surface.blurRes
+        sourceItem: blurV1
+        textureSize: surface.eighth
+        smooth: true
         hideSource: true
-        live: true
+        visible: false
     }
 
-    AlbumPalette {
-        id: palette
-        artUrl: content.artUrl
+    ShaderEffect {
+        id: blurH2
+        anchors.fill: parent
+        visible: false
+        property var source: blurV1Src
+        property vector2d resolution: surface.eighthVec
+        property vector2d blurDir: Qt.vector2d(1, 0)
+        property real spread: surface.spread
+        fragmentShader: "shaders/blur.frag.qsb"
+    }
+
+    ShaderEffectSource {
+        id: blurH2Src
+        anchors.fill: parent
+        sourceItem: blurH2
+        textureSize: surface.eighth
+        smooth: true
+        hideSource: true
+        visible: false
+    }
+
+    ShaderEffect {
+        id: blurV2
+        anchors.fill: parent
+        visible: false
+        property var source: blurH2Src
+        property vector2d resolution: surface.eighthVec
+        property vector2d blurDir: Qt.vector2d(0, 1)
+        property real spread: surface.spread
+        fragmentShader: "shaders/blur.frag.qsb"
+    }
+
+    ShaderEffectSource {
+        id: blurV2Src
+        anchors.fill: parent
+        sourceItem: blurV2
+        textureSize: surface.eighth
+        smooth: true
+        hideSource: true
+        visible: false
+    }
+
+    ShaderEffect {
+        id: blurH3
+        anchors.fill: parent
+        visible: false
+        property var source: blurV2Src
+        property vector2d resolution: surface.eighthVec
+        property vector2d blurDir: Qt.vector2d(1, 0)
+        property real spread: surface.spread
+        fragmentShader: "shaders/blur.frag.qsb"
+    }
+
+    ShaderEffectSource {
+        id: blurH3Src
+        anchors.fill: parent
+        sourceItem: blurH3
+        textureSize: surface.eighth
+        smooth: true
+        hideSource: true
+        visible: false
+    }
+
+    ShaderEffect {
+        id: blurV3
+        anchors.fill: parent
+        visible: false
+        property var source: blurH3Src
+        property vector2d resolution: surface.eighthVec
+        property vector2d blurDir: Qt.vector2d(0, 1)
+        property real spread: surface.spread
+        fragmentShader: "shaders/blur.frag.qsb"
+    }
+
+    ShaderEffectSource {
+        id: blurV3Src
+        anchors.fill: parent
+        sourceItem: blurV3
+        textureSize: surface.eighth
+        smooth: true
+        hideSource: true
+        visible: false
     }
 
     ShaderEffect {
         anchors.fill: parent
-        property var source: blurVSrc
-        property color accent: palette.hasArt ? palette.accent : Qt.rgba(0.5, 0.5, 0.5, 1.0)
-        property real tint: 0.35
+        property var source: blurV3Src
+        property vector2d srcSize: surface.eighthVec
         property real darken: 0.62
         fragmentShader: "shaders/grade.frag.qsb"
+    }
+
+    GlowField {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: parent.height * 0.55
     }
 
     Content {
         id: content
         anchors.fill: parent
         s: surface.s
-        accent: palette.accent
         auth: surface.auth
+        isMain: surface.isMain
     }
 }

@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Effects
 import Quickshell
@@ -7,8 +9,8 @@ import "Singletons"
 Item {
     id: content
     property real s: 1
-    property color accent: Theme.accent
     property var auth: null
+    property bool isMain: true
 
     readonly property bool authenticating: auth ? auth.authenticating : false
     property bool showError: false
@@ -27,7 +29,12 @@ Item {
         }
     }
 
-    readonly property var deLocale: Qt.locale("de_DE")
+    readonly property var weekdays: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    readonly property var months: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+    readonly property string dateText: {
+        var d = sysClock.date;
+        return weekdays[d.getDay()] + " · " + months[d.getMonth()] + " " + d.getDate();
+    }
 
     readonly property var player: {
         var list = Mpris.players.values;
@@ -70,288 +77,259 @@ Item {
     readonly property real positionSec: hasPlayer ? player.position : 0
     readonly property real progress: lengthSec > 0 ? Math.max(0, Math.min(1, positionSec / lengthSec)) : 0
 
+    function fmtTime(sec) {
+        var m = Math.floor(sec / 60);
+        var ss = Math.floor(sec % 60);
+        return m + ":" + (ss < 10 ? "0" : "") + ss;
+    }
+
+    readonly property string metaLine: {
+        var t = lengthSec > 0 ? fmtTime(positionSec) + " / " + fmtTime(lengthSec) : "";
+        if (trackArtist.length > 0 && t.length > 0)
+            return trackArtist + " · " + t;
+        return trackArtist.length > 0 ? trackArtist : t;
+    }
+
     SystemClock {
         id: sysClock
-        precision: SystemClock.Seconds
+        precision: SystemClock.Minutes
     }
 
     Timer {
         interval: 1000
-        running: content.playing
+        running: content.playing && content.isMain
         repeat: true
         onTriggered: if (content.player) content.player.positionChanged()
     }
 
-    component TransportButton: Item {
-        property string icon: ""
-        property real box: 18
-        property bool enabledAction: true
-        property bool hovered: tArea.containsMouse
-        signal triggered()
-        width: box * content.s
-        height: box * content.s
-        opacity: enabledAction ? 1 : 0.35
+    Text {
+        visible: content.isMain
+        x: parent.width * 0.055
+        y: parent.height * 0.065
+        text: content.dateText
+        color: Theme.cream
+        opacity: 0.85
+        font.family: Theme.font
+        font.weight: 600
+        font.pixelSize: 11 * content.s
+        font.letterSpacing: 3.5 * content.s
+        font.capitalization: Font.AllUppercase
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: Qt.rgba(0, 0, 0, 0.45)
+            shadowBlur: 0.6
+            shadowVerticalOffset: 1
+            shadowHorizontalOffset: 0
+        }
+    }
 
-        Image {
-            id: tImg
-            anchors.fill: parent
-            source: Qt.resolvedUrl("assets/icons/" + icon + ".svg")
-            sourceSize.width: 64
-            sourceSize.height: 64
-            fillMode: Image.PreserveAspectFit
-            smooth: true
-            mipmap: true
-            visible: false
-        }
-        MultiEffect {
-            anchors.fill: tImg
-            source: tImg
-            colorization: 1.0
-            colorizationColor: parent.hovered && parent.enabledAction ? content.accent : Theme.cream
-        }
-        MouseArea {
-            id: tArea
-            anchors.fill: parent
-            hoverEnabled: true
-            enabled: parent.enabledAction
-            cursorShape: Qt.PointingHandCursor
-            onClicked: parent.triggered()
+    Text {
+        visible: content.isMain
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: parent.height * 0.24
+        color: Theme.bright
+        font.family: "Zen Kaku Gothic New"
+        font.weight: 500
+        font.pixelSize: 130 * content.s
+        text: Qt.formatDateTime(sysClock.date, "HH:mm")
+        layer.enabled: true
+        layer.effect: MultiEffect {
+            shadowEnabled: true
+            shadowColor: Qt.rgba(0, 0, 0, 0.5)
+            shadowBlur: 1.0
+            shadowVerticalOffset: 2
+            shadowHorizontalOffset: 0
         }
     }
 
     Column {
-        id: clockStack
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: parent.height * 0.4 - height / 2
-        spacing: 14 * content.s
-
-        Text {
-            id: clockText
-            anchors.horizontalCenter: parent.horizontalCenter
-            color: Theme.text
-            font.family: Theme.font
-            font.pixelSize: 96 * content.s
-            font.weight: Font.Medium
-            font.letterSpacing: -3 * content.s
-            font.features: { "tnum": 1 }
-            textFormat: Text.StyledText
-            text: {
-                var hh = Qt.formatDateTime(sysClock.date, "HH");
-                var mm = Qt.formatDateTime(sysClock.date, "mm");
-                return hh + "<font color=\"" + content.accent + "\">:</font>" + mm;
-            }
-        }
-
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            text: sysClock.date.toLocaleDateString(content.deLocale, "dddd · d. MMMM")
-            color: Theme.textDim
-            font.family: Theme.font
-            font.pixelSize: 13 * content.s
-            font.weight: Font.Medium
-            font.capitalization: Font.AllUppercase
-            font.letterSpacing: 5 * content.s
-        }
-    }
-
-    Row {
-        id: nowPlaying
-        visible: content.hasPlayer
+        visible: content.isMain && content.hasPlayer
         anchors.left: parent.left
         anchors.bottom: parent.bottom
-        anchors.leftMargin: 30 * content.s
-        anchors.bottomMargin: 30 * content.s
-        spacing: 14 * content.s
+        anchors.leftMargin: parent.width * 0.045
+        anchors.bottomMargin: parent.height * 0.075
+        spacing: 9 * content.s
 
-        Rectangle {
-            id: cover
-            width: 54 * content.s
-            height: 54 * content.s
-            radius: 10 * content.s
-            anchors.verticalCenter: parent.verticalCenter
-            clip: true
-            gradient: Gradient {
-                GradientStop { position: 0.0; color: content.accent }
-                GradientStop { position: 1.0; color: "#180d09" }
-            }
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                shadowEnabled: true
-                shadowColor: content.accent
-                shadowBlur: 0.6
-                shadowVerticalOffset: 0
-                shadowHorizontalOffset: 0
-            }
-            Image {
-                id: coverImg
-                anchors.fill: parent
-                visible: content.artUrl.length > 0
-                source: content.artUrl
-                fillMode: Image.PreserveAspectCrop
-                smooth: true
-                mipmap: true
-                cache: false
-                asynchronous: true
-                layer.enabled: true
-                layer.effect: MultiEffect {
-                    maskEnabled: true
-                    maskSource: coverMask
+        Row {
+            spacing: 12 * content.s
+
+            Rectangle {
+                width: 48 * content.s
+                height: 48 * content.s
+                radius: 10 * content.s
+                anchors.verticalCenter: parent.verticalCenter
+                clip: true
+                color: "#1a100c"
+                Image {
+                    id: coverImg
+                    anchors.fill: parent
+                    visible: content.artUrl.length > 0
+                    source: content.artUrl
+                    fillMode: Image.PreserveAspectCrop
+                    smooth: true
+                    mipmap: true
+                    cache: false
+                    asynchronous: true
+                    layer.enabled: true
+                    layer.effect: MultiEffect {
+                        maskEnabled: true
+                        maskSource: coverMask
+                    }
+                }
+                Item {
+                    id: coverMask
+                    anchors.fill: parent
+                    layer.enabled: true
+                    visible: false
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: 10 * content.s
+                    }
                 }
             }
-            Item {
-                id: coverMask
-                anchors.fill: parent
-                layer.enabled: true
-                visible: false
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 10 * content.s
+
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 3 * content.s
+
+                Text {
+                    text: content.trackTitle.length > 0 ? content.trackTitle : "Unknown"
+                    color: Theme.bright
+                    font.family: Theme.font
+                    font.pixelSize: 12 * content.s
+                    font.weight: 600
+                    elide: Text.ElideRight
+                    width: 140 * content.s
+                }
+                Text {
+                    visible: content.metaLine.length > 0
+                    text: content.metaLine
+                    color: Theme.dim
+                    font.family: Theme.font
+                    font.pixelSize: 10 * content.s
+                    font.weight: 500
+                    elide: Text.ElideRight
+                    width: 140 * content.s
                 }
             }
         }
 
-        Column {
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: 3 * content.s
+        Item {
+            width: 200 * content.s
+            height: 2
 
-            Text {
-                text: "NOW PLAYING"
-                color: content.accent
-                font.family: Theme.font
-                font.pixelSize: 9 * content.s
-                font.weight: Font.Bold
-                font.capitalization: Font.AllUppercase
-                font.letterSpacing: 2 * content.s
-            }
-            Text {
-                text: content.trackTitle.length > 0 ? content.trackTitle : "Unknown"
-                color: Theme.text
-                font.family: Theme.font
-                font.pixelSize: 15 * content.s
-                font.weight: Font.DemiBold
-                elide: Text.ElideRight
-                width: 200 * content.s
-            }
-            Text {
-                visible: content.trackArtist.length > 0
-                text: content.trackArtist
-                color: Theme.textDim
-                font.family: Theme.font
-                font.pixelSize: 12 * content.s
-                font.weight: Font.Medium
-                bottomPadding: 4 * content.s
-                elide: Text.ElideRight
-                width: 200 * content.s
+            Rectangle {
+                anchors.fill: parent
+                radius: 1
+                color: Theme.trackBg
             }
             Rectangle {
-                width: 200 * content.s
-                height: 3
-                radius: 99
-                color: Theme.trackBg
-                Rectangle {
-                    width: parent.width * content.progress
-                    height: parent.height
-                    radius: 99
-                    color: content.accent
-                }
+                id: threadFill
+                width: parent.width * content.progress
+                height: parent.height
+                radius: 1
+                color: Theme.verm
             }
-            Row {
-                topPadding: 12 * content.s
-                spacing: 22 * content.s
-
-                TransportButton {
-                    icon: "prev"
-                    box: 18
-                    enabledAction: content.hasPlayer && content.player.canGoPrevious
-                    anchors.verticalCenter: parent.verticalCenter
-                    onTriggered: if (content.player && content.player.canGoPrevious) content.player.previous()
-                }
-                TransportButton {
-                    icon: content.playing ? "pause" : "play"
-                    box: 18
-                    enabledAction: content.hasPlayer && content.player.canTogglePlaying
-                    anchors.verticalCenter: parent.verticalCenter
-                    onTriggered: if (content.player && content.player.canTogglePlaying) content.player.togglePlaying()
-                }
-                TransportButton {
-                    icon: "next"
-                    box: 18
-                    enabledAction: content.hasPlayer && content.player.canGoNext
-                    anchors.verticalCenter: parent.verticalCenter
-                    onTriggered: if (content.player && content.player.canGoNext) content.player.next()
-                }
+            Rectangle {
+                x: Math.min(parent.width - width, Math.max(0, threadFill.width - width / 2))
+                anchors.verticalCenter: parent.verticalCenter
+                width: 5 * content.s
+                height: 5 * content.s
+                radius: width / 2
+                color: Theme.cream
             }
         }
     }
 
     Rectangle {
-        id: field
+        id: capsule
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 34 * content.s
-        width: 230 * content.s
-        height: input.implicitHeight + 22 * content.s
-        radius: 14 * content.s
-        color: content.showError ? Theme.errorBg : Theme.fieldBg
+        anchors.bottomMargin: parent.height * 0.09
+        width: 340 * content.s
+        height: 50 * content.s
+        radius: height / 2
+        color: Theme.fieldBg
         border.width: 1
-        border.color: content.showError ? Theme.error : (input.activeFocus ? content.accent : Theme.fieldBorder)
-        opacity: content.authenticating ? 0.6 : 1
+        border.color: Theme.fieldBorder
+        opacity: content.isMain ? (content.authenticating ? 0.6 : 1) : 0
 
-        transform: Translate { id: fieldShift }
+        transform: Translate { id: capsuleShift }
 
         SequentialAnimation {
             id: shake
-            NumberAnimation { target: fieldShift; property: "x"; to: 9 * content.s; duration: 45 }
-            NumberAnimation { target: fieldShift; property: "x"; to: -9 * content.s; duration: 70 }
-            NumberAnimation { target: fieldShift; property: "x"; to: 6 * content.s; duration: 70 }
-            NumberAnimation { target: fieldShift; property: "x"; to: 0; duration: 55 }
+            NumberAnimation { target: capsuleShift; property: "x"; to: 9 * content.s; duration: 50 }
+            NumberAnimation { target: capsuleShift; property: "x"; to: -9 * content.s; duration: 50 }
+            NumberAnimation { target: capsuleShift; property: "x"; to: 6 * content.s; duration: 50 }
+            NumberAnimation { target: capsuleShift; property: "x"; to: -6 * content.s; duration: 50 }
+            NumberAnimation { target: capsuleShift; property: "x"; to: 0; duration: 50 }
         }
-
-        Behavior on color { ColorAnimation { duration: 200 } }
-        Behavior on border.color { ColorAnimation { duration: 200 } }
 
         TextInput {
             id: input
             anchors.fill: parent
-            anchors.leftMargin: 16 * content.s
-            anchors.rightMargin: 16 * content.s
+            anchors.leftMargin: 24 * content.s
+            anchors.rightMargin: 24 * content.s
             verticalAlignment: TextInput.AlignVCenter
             horizontalAlignment: TextInput.AlignHCenter
             echoMode: TextInput.Password
-            color: Theme.text
+            passwordCharacter: "•"
+            color: Theme.bright
             font.family: Theme.font
-            font.pixelSize: 13 * content.s
-            font.weight: Font.Medium
+            font.pixelSize: 15 * content.s
+            font.letterSpacing: 2 * content.s
             clip: true
             focus: true
             enabled: !content.authenticating
-            onTextChanged: if (text.length > 0) content.showError = false
+            onTextChanged: {
+                if (text.length > 0)
+                    content.showError = false;
+                if (Pw.text !== text)
+                    Pw.text = text;
+            }
+
+            Connections {
+                target: Pw
+                function onTextChanged() {
+                    if (input.text !== Pw.text)
+                        input.text = Pw.text;
+                }
+            }
             onAccepted: {
                 if (content.auth && text.length > 0)
                     content.auth.submit(text);
             }
-        }
-        Text {
-            anchors.centerIn: parent
-            visible: input.text.length === 0 && !input.activeFocus
-            text: content.showError ? "wrong password" : "enter password"
-            color: content.showError ? Theme.error : Theme.textDim
-            font.family: Theme.font
-            font.pixelSize: 13 * content.s
-            font.weight: Font.Medium
-        }
-    }
 
-    Text {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: 30 * content.s
-        anchors.bottomMargin: 34 * content.s
-        color: Theme.textDim
-        font.family: Theme.font
-        font.pixelSize: 12 * content.s
-        font.weight: Font.Medium
-        textFormat: Text.StyledText
-        text: "<b><font color=\"" + Theme.cream + "\">ricelin</font></b> · torii"
+            cursorDelegate: Rectangle {
+                visible: input.text.length > 0
+                width: 2 * content.s
+                height: input.cursorRectangle.height
+                color: Theme.verm
+                SequentialAnimation on opacity {
+                    running: input.activeFocus
+                    loops: Animation.Infinite
+                    NumberAnimation { to: 0; duration: 0 }
+                    PauseAnimation { duration: 550 }
+                    NumberAnimation { to: 1; duration: 0 }
+                    PauseAnimation { duration: 550 }
+                }
+            }
+
+            Text {
+                anchors.centerIn: parent
+                visible: input.text.length === 0
+                text: {
+                    if (!content.showError)
+                        return "password";
+                    var pamMsg = content.auth ? content.auth.lastError : "";
+                    return pamMsg.length > 0 ? pamMsg.toLowerCase() : "wrong password";
+                }
+                color: content.showError ? Theme.error : Theme.dim
+                font.family: Theme.font
+                font.pixelSize: 14 * content.s
+                font.letterSpacing: 1 * content.s
+            }
+        }
     }
 }

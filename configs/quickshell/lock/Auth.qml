@@ -11,10 +11,12 @@ Item {
     signal succeeded
 
     property string pendingPassword: ""
+    property string lastError: ""
 
     function submit(password) {
         if (pam.active)
             return;
+        auth.lastError = "";
         auth.pendingPassword = password;
         pam.start();
     }
@@ -27,6 +29,11 @@ Item {
         onResponseRequiredChanged: {
             if (responseRequired)
                 respond(auth.pendingPassword);
+        }
+
+        onPamMessage: {
+            if (messageIsError && message.length > 0)
+                auth.lastError = message;
         }
 
         onCompleted: result => {
