@@ -28,6 +28,7 @@ Item {
     function showMenu(item, anchorItem) {
         if (!item.hasMenu)
             return;
+        card.expandedIdx = -1;
         opener.menu = item.menu;
         var p = anchorItem.mapToItem(null, anchorItem.width / 2, 0);
         menu.anchorX = p.x;
@@ -88,12 +89,10 @@ Item {
                             slot.modelData.secondaryActivate();
                         } else if (mouse.button === Qt.RightButton) {
                             tray.showMenu(slot.modelData, slot);
+                        } else if (slot.modelData.onlyMenu) {
+                            tray.showMenu(slot.modelData, slot);
                         } else {
-                            var entry = DesktopEntries.heuristicLookup(slot.modelData.id);
-                            if (entry)
-                                entry.execute();
-                            else
-                                slot.modelData.activate();
+                            slot.modelData.activate();
                         }
                     }
                     onWheel: (wheel) => {
@@ -104,11 +103,148 @@ Item {
         }
     }
 
+    /**
+     * One menu line: separator, or a row with optional checkbox/radio state,
+     * icon, label and a submenu chevron that rotates when expanded. Used for
+     * both top-level entries and indented submenu children.
+     */
+    component MenuRow: Item {
+        id: mrow
+
+        property var entryData
+        property real indent: 0
+        property bool expanded: false
+        signal activated()
+
+        height: entryData.isSeparator ? 9 * tray.s : 32 * tray.s
+
+        Rectangle {
+            visible: mrow.entryData.isSeparator
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.leftMargin: 8 * tray.s + mrow.indent
+            anchors.rightMargin: 8 * tray.s
+            height: 1
+            color: Theme.hair
+        }
+
+        Rectangle {
+            visible: !mrow.entryData.isSeparator
+            anchors.fill: parent
+            anchors.leftMargin: mrow.indent
+            radius: 8 * tray.s
+            color: mrowArea.containsMouse && mrow.entryData.enabled
+                ? Theme.frameBg : "transparent"
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 6 * tray.s
+                width: 2 * tray.s
+                height: parent.height * 0.46
+                radius: width / 2
+                color: Theme.vermLit
+                opacity: mrowArea.containsMouse && mrow.entryData.enabled ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: Motion.fast } }
+            }
+
+            Rectangle {
+                id: stateBox
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: 16 * tray.s
+                readonly property bool isCheck: mrow.entryData.buttonType === QsMenuButtonType.CheckBox
+                readonly property bool isRadio: mrow.entryData.buttonType === QsMenuButtonType.RadioButton
+                readonly property bool present: isCheck || isRadio
+                readonly property bool checked: mrow.entryData.checkState === Qt.Checked
+                visible: present
+                width: present ? 11 * tray.s : 0
+                height: 11 * tray.s
+                radius: isRadio ? width / 2 : 3 * tray.s
+                color: "transparent"
+                border.width: 1
+                border.color: checked ? Theme.vermLit : Theme.border
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    visible: stateBox.checked
+                    width: 5 * tray.s
+                    height: 5 * tray.s
+                    radius: stateBox.isRadio ? width / 2 : 1.5 * tray.s
+                    color: Theme.vermLit
+                }
+            }
+
+            Image {
+                id: entryIcon
+                anchors.left: stateBox.right
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.leftMargin: stateBox.present ? 8 * tray.s : 0
+                width: mrow.entryData.icon ? 15 * tray.s : 0
+                height: 15 * tray.s
+                source: mrow.entryData.icon
+                sourceSize.width: 30
+                sourceSize.height: 30
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                mipmap: true
+                visible: mrow.entryData.icon
+            }
+
+            Text {
+                anchors.left: entryIcon.right
+                anchors.leftMargin: mrow.entryData.icon ? 9 * tray.s : 0
+                anchors.verticalCenter: parent.verticalCenter
+                anchors.right: chevron.visible ? chevron.left : parent.right
+                anchors.rightMargin: 14 * tray.s
+                text: mrow.entryData.text
+                color: !mrow.entryData.enabled ? Theme.dim
+                    : (mrowArea.containsMouse ? Theme.cream : Theme.creamMenu)
+                font.family: Theme.font
+                font.pixelSize: 13 * tray.s
+                font.weight: mrowArea.containsMouse ? Font.DemiBold : Font.Normal
+                elide: Text.ElideRight
+            }
+
+            GlyphIcon {
+                id: chevron
+                anchors.right: parent.right
+                anchors.rightMargin: 10 * tray.s
+                anchors.verticalCenter: parent.verticalCenter
+                visible: mrow.entryData.hasChildren === true
+                width: 10 * tray.s
+                height: 10 * tray.s
+                name: "chevron-right"
+                color: mrow.expanded ? Theme.vermLit : Theme.iconDim
+                stroke: 2
+                rotation: mrow.expanded ? 90 : 0
+                Behavior on rotation { NumberAnimation { duration: Motion.fast } }
+            }
+
+            MouseArea {
+                id: mrowArea
+                anchors.fill: parent
+                hoverEnabled: true
+                enabled: mrow.entryData.enabled
+                cursorShape: Qt.PointingHandCursor
+                onClicked: mrow.activated()
+            }
+        }
+    }
+
     PanelWindow {
         id: menu
 
         property bool open: false
         property real anchorX: 0
+
+        onOpenChanged: {
+            if (!open) {
+                card.expandedIdx = -1;
+                opener.menu = null;
+            }
+        }
 
         screen: tray.barWindow ? tray.barWindow.screen : null
         visible: open
@@ -148,6 +284,8 @@ Item {
                 border.width: 1
                 border.color: Theme.border
 
+                property int expandedIdx: -1
+
                 implicitHeight: col.implicitHeight + 12 * tray.s
                 height: implicitHeight
 
@@ -183,82 +321,47 @@ Item {
                     Repeater {
                         model: opener.children ? opener.children.values : []
 
-                        delegate: Item {
+                        delegate: Column {
                             id: entry
+
                             required property var modelData
+                            required property int index
+                            readonly property bool expanded: card.expandedIdx === index
+
                             width: col.width
-                            height: modelData.isSeparator ? 9 * tray.s : 32 * tray.s
 
-                            Rectangle {
-                                visible: entry.modelData.isSeparator
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.left: parent.left
-                                anchors.right: parent.right
-                                anchors.leftMargin: 8 * tray.s
-                                anchors.rightMargin: 8 * tray.s
-                                height: 1
-                                color: Theme.hair
-                            }
-
-                            Rectangle {
-                                visible: !entry.modelData.isSeparator
-                                anchors.fill: parent
-                                radius: 8 * tray.s
-                                color: rowArea.containsMouse && entry.modelData.enabled
-                                    ? Theme.frameBg : "transparent"
-
-                                Rectangle {
-                                    anchors.left: parent.left
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.leftMargin: 6 * tray.s
-                                    width: 2 * tray.s
-                                    height: parent.height * 0.46
-                                    radius: width / 2
-                                    color: Theme.vermLit
-                                    opacity: rowArea.containsMouse && entry.modelData.enabled ? 1 : 0
-                                    Behavior on opacity { NumberAnimation { duration: Motion.fast } }
-                                }
-
-                                Image {
-                                    id: entryIcon
-                                    anchors.left: parent.left
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.leftMargin: 16 * tray.s
-                                    width: entry.modelData.icon ? 15 * tray.s : 0
-                                    height: 15 * tray.s
-                                    source: entry.modelData.icon
-                                    sourceSize.width: 30
-                                    sourceSize.height: 30
-                                    fillMode: Image.PreserveAspectFit
-                                    smooth: true
-                                    mipmap: true
-                                    visible: entry.modelData.icon
-                                }
-
-                                Text {
-                                    anchors.left: entryIcon.right
-                                    anchors.leftMargin: entry.modelData.icon ? 9 * tray.s : 0
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    anchors.right: parent.right
-                                    anchors.rightMargin: 14 * tray.s
-                                    text: entry.modelData.text
-                                    color: !entry.modelData.enabled ? Theme.dim
-                                        : (rowArea.containsMouse ? Theme.cream : Theme.creamMenu)
-                                    font.family: Theme.font
-                                    font.pixelSize: 13 * tray.s
-                                    font.weight: rowArea.containsMouse ? Font.DemiBold : Font.Normal
-                                    elide: Text.ElideRight
-                                }
-
-                                MouseArea {
-                                    id: rowArea
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    enabled: entry.modelData.enabled
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
+                            MenuRow {
+                                width: parent.width
+                                entryData: entry.modelData
+                                expanded: entry.expanded
+                                onActivated: {
+                                    if (entry.modelData.hasChildren) {
+                                        card.expandedIdx = entry.expanded ? -1 : entry.index;
+                                    } else {
                                         entry.modelData.triggered();
                                         menu.open = false;
+                                    }
+                                }
+                            }
+
+                            QsMenuOpener {
+                                id: childOpener
+                                menu: entry.expanded ? entry.modelData : null
+                            }
+
+                            Repeater {
+                                model: childOpener.children ? childOpener.children.values : []
+
+                                delegate: MenuRow {
+                                    required property var modelData
+                                    width: entry.width
+                                    indent: 14 * tray.s
+                                    entryData: modelData
+                                    onActivated: {
+                                        if (!modelData.hasChildren) {
+                                            modelData.triggered();
+                                            menu.open = false;
+                                        }
                                     }
                                 }
                             }
