@@ -25,6 +25,14 @@ Item {
     property string query: ""
     property int selectedIndex: 0
 
+    /**
+     * Window-coordinate position of the last hover event that was allowed to
+     * move the selection. Rows sliding under a stationary cursor during
+     * keyboard scrolling produce hover events at an unchanged window position,
+     * which must not steal the keyboard selection.
+     */
+    property point lastPointer: Qt.point(-1, -1)
+
     readonly property point caretPoint: {
         void root.width;
         void root.height;
@@ -260,7 +268,15 @@ Item {
 
             HoverHandler {
                 id: rowHover
-                onHoveredChanged: if (hovered) root.selectedIndex = row.index
+                onPointChanged: {
+                    if (!hovered)
+                        return;
+                    var sp = point.scenePosition;
+                    if (sp.x !== root.lastPointer.x || sp.y !== root.lastPointer.y) {
+                        root.lastPointer = Qt.point(sp.x, sp.y);
+                        root.selectedIndex = row.index;
+                    }
+                }
             }
 
             Rectangle {

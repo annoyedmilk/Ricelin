@@ -30,7 +30,7 @@ Singleton {
     readonly property string thumbScript: Quickshell.env("HOME") + "/.config/hypr/scripts/cliphist-thumbs.sh"
 
     function refresh() {
-        if (thumbProc.running || listProc.running) {
+        if (thumbProc.running || listProc.running || delProc.running || delQueue.length) {
             pending = true;
             return;
         }
@@ -48,15 +48,44 @@ Singleton {
         wipeProc.running = true;
     }
 
+    /**
+     * Deletes are queued through a tracked process and any refresh is held
+     * until the queue drains: a fire-and-forget delete racing an in-flight
+     * `cliphist list` used to resurrect the removed entry from the stale
+     * snapshot. The local prune stays optimistic so the row vanishes
+     * immediately.
+     */
+    property var delQueue: []
+
     function remove(entry) {
-        if (!/^\d+$/.test(String(entry.id)))
+        var id = String(entry.id);
+        if (!/^\d+$/.test(id))
             return;
-        Quickshell.execDetached(["sh", "-c", "printf '%s' \"$1\" | cliphist delete", "_", String(entry.id)]);
         var kept = [];
         for (var i = 0; i < entries.length; i++)
-            if (entries[i].id !== entry.id)
+            if (entries[i].id !== id)
                 kept.push(entries[i]);
         entries = kept;
+        delQueue.push(id);
+        pumpDeletes();
+    }
+
+    function pumpDeletes() {
+        if (delProc.running || !delQueue.length)
+            return;
+        var id = delQueue.shift();
+        delProc.command = ["sh", "-c", "printf '%s' \"$1\" | cliphist delete", "_", id];
+        delProc.running = true;
+    }
+
+    Process {
+        id: delProc
+        onExited: {
+            if (root.delQueue.length)
+                root.pumpDeletes();
+            else
+                root.refresh();
+        }
     }
 
     Process {

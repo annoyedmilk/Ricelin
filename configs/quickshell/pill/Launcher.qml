@@ -24,6 +24,14 @@ Item {
     property int selectedIndex: 0
     property var usage: ({})
 
+    /**
+     * Window-coordinate position of the last hover event that was allowed to
+     * move the selection. Rows sliding under a stationary cursor during
+     * keyboard scrolling produce hover events at an unchanged window position,
+     * which must not steal the keyboard selection.
+     */
+    property point lastPointer: Qt.point(-1, -1)
+
     readonly property point caretPoint: {
         void root.width;
         void root.height;
@@ -234,7 +242,13 @@ Item {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onEntered: root.selectedIndex = appRow.index
+                onPositionChanged: (m) => {
+                    var g = rowArea.mapToItem(null, m.x, m.y);
+                    if (g.x !== root.lastPointer.x || g.y !== root.lastPointer.y) {
+                        root.lastPointer = Qt.point(g.x, g.y);
+                        root.selectedIndex = appRow.index;
+                    }
+                }
                 onClicked: {
                     root.selectedIndex = appRow.index;
                     root.activate();
