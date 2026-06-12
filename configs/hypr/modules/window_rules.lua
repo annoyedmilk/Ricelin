@@ -40,3 +40,11 @@ hl.window_rule({
     match = { class = "[Ss]potify" },
     float = true,
 })
+
+hl.window_rule({
+    name   = "float-dolphin",
+    match  = { class = "org.kde.dolphin" },
+    float  = true,
+    size   = { 1500, 850 },
+    center = true,
+})
