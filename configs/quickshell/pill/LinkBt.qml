@@ -187,7 +187,7 @@ Item {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: root.adapter ? root.adapter.enabled === true : false
-                text: root.discovering ? "Sucht…" : "Scan"
+                text: root.discovering ? "Scanning…" : "Scan"
                 color: root.discovering ? Theme.vermLit : Theme.dim
                 font.family: Theme.font
                 font.pixelSize: 9.5 * root.s
@@ -241,7 +241,7 @@ Item {
             anchors.left: parent.left
             anchors.leftMargin: 6 * root.s
             anchors.verticalCenter: parent.verticalCenter
-            text: root.discovering ? "Suche…" : "Keine Geräte"
+            text: root.discovering ? "Scanning…" : "No devices"
             color: Theme.dim
             font.family: Theme.font
             font.pixelSize: 11 * root.s
@@ -398,7 +398,7 @@ Item {
 
                         Text {
                             visible: devItem.failed
-                            text: "Pairing fehlgeschlagen"
+                            text: "Pairing failed"
                             color: Theme.vermLit
                             font.family: Theme.font
                             font.pixelSize: 9.5 * root.s

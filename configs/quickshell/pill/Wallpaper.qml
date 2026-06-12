@@ -224,7 +224,7 @@ Item {
     Text {
         anchors.centerIn: parent
         visible: Walls.count === 0
-        text: "Keine Wallpaper in ~/Ricelin/wallpapers"
+        text: "No wallpapers in ~/Ricelin/wallpapers"
         color: Theme.faint
         font.family: Theme.font
         font.pixelSize: 10.5 * root.s

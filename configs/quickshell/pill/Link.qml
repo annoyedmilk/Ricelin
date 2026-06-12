@@ -102,7 +102,7 @@ Item {
         : (btPrimary
             ? ((btPrimary.deviceName || btPrimary.name || "Unknown")
                 + (btConnected.length > 1 ? " +" + (btConnected.length - 1) : ""))
-            : "Keine Verbindung")
+            : "Not connected")
 
     property string ethIp: ""
 
@@ -461,7 +461,7 @@ Item {
 
                     Text {
                         width: parent.width
-                        text: "Netz"
+                        text: "Network"
                         color: Theme.cream
                         font.family: Theme.font
                         font.pixelSize: 12.5 * root.s
@@ -726,7 +726,10 @@ Item {
                                     radius: 8 * root.s
                                     color: headHover.hovered ? Theme.frameBg : "transparent"
 
-                                    HoverHandler { id: headHover }
+                                    HoverHandler {
+                                        id: headHover
+                                        onHoveredChanged: root.reportRowHover(groupHead, hovered)
+                                    }
 
                                     MouseArea {
                                         anchors.fill: parent
@@ -890,7 +893,7 @@ Item {
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "STILLE"
+                    text: "SILENCE"
                     color: Theme.faint
                     font.family: Theme.font
                     font.pixelSize: 9 * root.s

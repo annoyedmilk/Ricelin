@@ -238,7 +238,7 @@ Item {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
-                text: "WLAN"
+                text: "WIFI"
                 color: Theme.subtle
                 font.family: Theme.font
                 font.pixelSize: 10 * root.s
@@ -281,7 +281,7 @@ Item {
         Text {
             anchors.centerIn: parent
             visible: root.wifiOn && root.nets.length === 0
-            text: "Suche Netzwerke…"
+            text: "Searching networks…"
             color: Theme.faint
             font.family: Theme.font
             font.pixelSize: 10.5 * root.s
@@ -394,7 +394,7 @@ Item {
                                 font.family: Theme.font
                                 font.pixelSize: 11.5 * root.s
                                 echoMode: TextInput.Password
-                                placeholderText: "Passwort"
+                                placeholderText: "Password"
                                 placeholderTextColor: Theme.faint
                                 selectByMouse: true
                                 selectionColor: Theme.verm
@@ -446,7 +446,7 @@ Item {
 
                         Text {
                             visible: netItem.expanded && root.connectFailed
-                            text: "Verbindung fehlgeschlagen"
+                            text: "Connection failed"
                             color: Theme.vermLit
                             font.family: Theme.font
                             font.pixelSize: 9.5 * root.s
