@@ -13,11 +13,13 @@ import "Singletons"
  * opens. `implicitHeight` lets the pill shrink to the live row count, and
  * `todayX/todayY/todayVisible` expose today's cell centre for the flame lap.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
+    mTop: 16
+    mLeft: 18
+    mRight: 18
+    mBottom: 16
 
     readonly property var loc: Qt.locale("en_US")
 

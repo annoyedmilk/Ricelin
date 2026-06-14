@@ -13,11 +13,13 @@ import "lib/fuzzy.js" as Fuzzy
  * is shared with the standalone launcher), and the chosen entry is executed
  * directly. Fills the lower body of the morphing pill.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
+    mTop: 15
+    mLeft: 17
+    mRight: 17
+    mBottom: 14
 
     property string query: ""
     property int selectedIndex: 0
@@ -43,8 +45,6 @@ Item {
     readonly property real caretY: caretPoint.y
 
     readonly property string usageFile: (Quickshell.env("XDG_STATE_HOME") || (Quickshell.env("HOME") + "/.local/state")) + "/ricelin/launcher-usage.json"
-
-    signal requestClose()
 
     readonly property var allEntries: {
         var src = DesktopEntries.applications.values;

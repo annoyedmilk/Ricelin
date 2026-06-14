@@ -710,135 +710,63 @@ Item {
 
     Mixer {
         id: mixer
-        anchors.fill: parent
-        anchors.topMargin: 13 * pill.s
-        anchors.leftMargin: 14 * pill.s
-        anchors.rightMargin: 14 * pill.s
-        anchors.bottomMargin: 12 * pill.s
         s: pill.s
-        active: pill.mixerOpen
-        enabled: pill.mixerOpen
-        opacity: pill.mixerOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Easing.OutCubic }
-        }
+        open: pill.mixerOpen
+        morphCloseness: pill.morphCloseness
     }
 
     Calendar {
         id: calendar
-        anchors.fill: parent
-        anchors.topMargin: 16 * pill.s
-        anchors.leftMargin: 18 * pill.s
-        anchors.rightMargin: 18 * pill.s
-        anchors.bottomMargin: 16 * pill.s
         s: pill.s
-        active: pill.calendarOpen
-        enabled: pill.calendarOpen
-        opacity: pill.calendarOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Easing.OutCubic }
-        }
+        open: pill.calendarOpen
+        morphCloseness: pill.morphCloseness
     }
 
     Launcher {
         id: launcher
-        anchors.fill: parent
-        anchors.topMargin: 15 * pill.s
-        anchors.leftMargin: 17 * pill.s
-        anchors.rightMargin: 17 * pill.s
-        anchors.bottomMargin: 14 * pill.s
         s: pill.s
-        active: pill.launcherOpen
-        enabled: pill.launcherOpen
-        opacity: pill.launcherOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
+        open: pill.launcherOpen
+        morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }
 
     Clipboard {
         id: clip
-        anchors.fill: parent
-        anchors.topMargin: 15 * pill.s
-        anchors.leftMargin: 17 * pill.s
-        anchors.rightMargin: 17 * pill.s
-        anchors.bottomMargin: 14 * pill.s
         s: pill.s
-        active: pill.clipboardOpen
-        enabled: pill.clipboardOpen
-        opacity: pill.clipboardOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
+        open: pill.clipboardOpen
+        morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }
 
     Wallpaper {
         id: wall
-        anchors.fill: parent
         s: pill.s
-        active: pill.wallpaperOpen
-        enabled: pill.wallpaperOpen
-        opacity: pill.wallpaperOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
+        open: pill.wallpaperOpen
+        morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }
 
     Power {
         id: power
-        anchors.fill: parent
-        anchors.topMargin: 15 * pill.s
-        anchors.leftMargin: 17 * pill.s
-        anchors.rightMargin: 17 * pill.s
-        anchors.bottomMargin: 14 * pill.s
         s: pill.s
-        active: pill.powerOpen
-        enabled: pill.powerOpen
-        opacity: pill.powerOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
+        open: pill.powerOpen
+        morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }
 
     Media {
         id: media
-        anchors.fill: parent
         s: pill.s
-        active: pill.mediaOpen
-        enabled: pill.mediaOpen
-        opacity: pill.mediaOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
+        open: pill.mediaOpen
+        morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }
 
     Link {
         id: link
-        anchors.fill: parent
-        anchors.topMargin: 13 * pill.s
-        anchors.leftMargin: 16 * pill.s
-        anchors.rightMargin: 16 * pill.s
-        anchors.bottomMargin: 13 * pill.s
         s: pill.s
-        active: pill.linkOpen
-        enabled: pill.linkOpen
-        opacity: pill.linkOpen ? Math.pow(pill.morphCloseness, 1.3) : 0
-        visible: opacity > 0.01
-        Behavior on opacity {
-            NumberAnimation { duration: Motion.standard; easing.type: Motion.easeStandard }
-        }
+        open: pill.linkOpen
+        morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }
 

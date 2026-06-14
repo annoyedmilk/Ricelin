@@ -16,14 +16,15 @@ import "Singletons"
  * `back()` for the pill's morph and Escape plumbing. Opening marks all
  * notifications seen after a short beat so unread embers register first.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
-    property string subview: "main"
+    mTop: 13
+    mLeft: 16
+    mRight: 16
+    mBottom: 13
 
-    signal requestClose()
+    property string subview: "main"
 
     readonly property real desiredW: (subview === "wifi" ? 272 : subview === "bt" ? 286 : 330) * s
 

@@ -9,11 +9,13 @@ import "Singletons"
  * via nvibrant, volume and mic via Pipewire). Designed to fill the lower body
  * of the morphing pill.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
+    mTop: 13
+    mLeft: 14
+    mRight: 14
+    mBottom: 12
 
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var source: Pipewire.defaultAudioSource

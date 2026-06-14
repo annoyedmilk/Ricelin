@@ -15,11 +15,13 @@ import "Singletons"
  * is the pill's native confirmation, mirroring the destructive power tiles;
  * progress sweeps along the header divider and drains on early release.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
+    mTop: 15
+    mLeft: 17
+    mRight: 17
+    mBottom: 14
 
     property string query: ""
     property int selectedIndex: 0
@@ -42,8 +44,6 @@ Item {
     }
     readonly property real caretX: caretPoint.x
     readonly property real caretY: caretPoint.y
-
-    signal requestClose()
 
     readonly property var results: {
         var all = Cliphist.entries;

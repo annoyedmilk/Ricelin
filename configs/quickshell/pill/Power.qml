@@ -13,12 +13,13 @@ import "Singletons"
  * bottom-up heat fill; releasing early drains it, so a stray click can never
  * reboot the machine. Only the hovered or held action shows its label.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
-    signal requestClose()
+    mTop: 15
+    mLeft: 17
+    mRight: 17
+    mBottom: 14
 
     property string hovered: ""
 

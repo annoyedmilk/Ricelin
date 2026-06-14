@@ -18,11 +18,9 @@ import "Singletons"
  * mirroring the clipboard wipe; progress sweeps along the thumb's lower edge
  * and drains on early release.
  */
-Item {
+PillSurface {
     id: root
 
-    property real s: 1
-    property bool active: false
     property int focusIndex: 0
 
     /**
@@ -32,8 +30,6 @@ Item {
      * instead of accumulating across per-tile retargeting animations.
      */
     property real pos: 0
-
-    signal requestClose()
 
     clip: true
 

@@ -17,12 +17,8 @@ import "Singletons"
  * head is the dock point for the pill's soul bead. Driven by the active MPRIS
  * player.
  */
-Item {
+PillSurface {
     id: root
-
-    property real s: 1
-    property bool active: false
-    signal requestClose()
 
     /**
      * Active player preference: playing beats paused-with-track beats merely
