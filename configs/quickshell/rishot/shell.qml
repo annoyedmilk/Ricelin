@@ -36,6 +36,7 @@ ShellRoot {
     property int frozenCount: 0
 
     readonly property bool testRect: Quickshell.env("RISHOT_TESTRECT") === "1"
+    readonly property string mode: Quickshell.env("RISHOT_MODE") === "monitor" ? "monitor" : "region"
     readonly property string homeDir: Quickshell.env("HOME")
     readonly property string shotsDir: homeDir + "/Pictures/Screenshots"
     readonly property string rishotLuaPath: homeDir + "/.config/hypr/modules/rishot.lua"
@@ -240,9 +241,25 @@ ShellRoot {
         }
         return best ? { x: best.x, y: best.y, w: best.w, h: best.h } : null;
     }
+    function monitorAt(gx, gy) {
+        var scr = Quickshell.screens;
+        for (var i = 0; i < scr.length; i++) {
+            var s = scr[i];
+            if (gx >= s.x && gx < s.x + s.width && gy >= s.y && gy < s.y + s.height)
+                return { x: s.x, y: s.y, w: s.width, h: s.height };
+        }
+        return null;
+    }
+    function selectMonitor(gx, gy) {
+        var m = monitorAt(gx, gy);
+        if (!m) return;
+        globalSel = m;
+        phase = "editing";
+        hoverWindow = null;
+    }
     function pointerHover(gx, gy) {
         if (phase !== "selecting") { if (hoverWindow !== null) hoverWindow = null; return; }
-        hoverWindow = windowAt(gx, gy);
+        hoverWindow = mode === "monitor" ? monitorAt(gx, gy) : windowAt(gx, gy);
     }
     function parseWindows(activeWs, json) {
         var rects = [];
@@ -268,7 +285,10 @@ ShellRoot {
         return ids;
     }
     function pointerPressed(gx, gy) {
-        if (phase === "selecting") beginSelection(gx, gy);
+        if (phase === "selecting") {
+            if (mode === "monitor") selectMonitor(gx, gy);
+            else beginSelection(gx, gy);
+        }
         else if (activeTool === "select") beginSelect(gx, gy);
         else beginDraw(gx, gy);
     }
@@ -412,7 +432,7 @@ ShellRoot {
     Process {
         id: copyProc
         function run(file) {
-            command = ["sh", "-c", "wl-copy --type image/png < " + JSON.stringify(file)];
+            command = ["sh", "-c", "wl-copy --type image/png < " + JSON.stringify(file) + "; cliphist store < " + JSON.stringify(file)];
             running = true;
         }
         onExited: (code) => { console.log("rishot: wl-copy exit " + code); Qt.quit(); }
