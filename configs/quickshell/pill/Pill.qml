@@ -40,6 +40,7 @@ Item {
     readonly property bool mediaOpen: surface === "media"
     readonly property bool linkOpen: surface === "link"
     readonly property bool batteryOpen: surface === "battery"
+    readonly property bool settingsOpen: surface === "settings"
     readonly property bool hasMedia: Mpris.players.values.length > 0
 
     /**
@@ -81,6 +82,7 @@ Item {
     readonly property real mediaW: 390 * s
     readonly property real mediaH: 150 * s
     readonly property real batteryW: 316 * s
+    readonly property real settingsW: 392 * s
     readonly property real toastW: 342 * s
     readonly property real restCorner: 18 * s
     readonly property real openCorner: 22 * s
@@ -94,9 +96,10 @@ Item {
         : (mixerOpen ? "mixer"
         : (linkOpen ? "link"
         : (batteryOpen ? "battery"
+        : (settingsOpen ? "settings"
         : (osdActive && !held ? "osd"
         : (toastActive && !held ? "toast"
-        : (expanded ? "hover" : "rest")))))))))))
+        : (expanded ? "hover" : "rest"))))))))))))
 
     signal requestSurface(string name)
     signal requestClose()
@@ -152,13 +155,16 @@ Item {
         id: clock
         readonly property var loc: Qt.locale("en_US")
         readonly property var now: sysClock.date
-        readonly property string hhmm: Qt.formatTime(now, "HH:mm")
+        readonly property string timeFormat: (Flags.time12h ? "h:mm" : "HH:mm")
+            + (Flags.clockSeconds ? ":ss" : "")
+            + (Flags.time12h ? " AP" : "")
+        readonly property string hhmm: Qt.formatTime(now, timeFormat)
         readonly property string date: loc.toString(now, "ddd d MMM")
     }
 
     SystemClock {
         id: sysClock
-        precision: SystemClock.Minutes
+        precision: Flags.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes
     }
 
     property real morphRadius: (mode === "rest" || mode === "hover") ? restCorner : openCorner
@@ -178,6 +184,7 @@ Item {
         mixer:     () => Qt.size(mixerW, mixerH),
         link:      () => Qt.size(link.desiredW, link.implicitHeight + 26 * s),
         battery:   () => Qt.size(batteryW, battery.implicitHeight + 26 * s),
+        settings:  () => Qt.size(settingsW, settings.implicitHeight + 29 * s),
         osd:       () => Qt.size(osd.desiredW, osd.desiredH),
         toast:     () => Qt.size(toastW, toastLoader.item ? toastLoader.item.implicitHeight + 24 * s : restH),
         hover:     () => Qt.size(hoverW, hoverH)
@@ -355,6 +362,8 @@ Item {
             return mixerIcon.mapToItem(pill, mixerIcon.width / 2, mixerIcon.height + drop * 0.55);
         if (soulTarget === "power")
             return powerIcon.mapToItem(pill, powerIcon.width / 2, powerIcon.height + drop * 0.55);
+        if (soulTarget === "settings")
+            return settingsIcon.mapToItem(pill, settingsIcon.width / 2, settingsIcon.height + drop * 0.55);
         if (soulTarget === "ws" && soulWsIndex >= 0) {
             void ws.activeName;
             void ws.width;
@@ -376,7 +385,8 @@ Item {
         : (mixerOpen ? mixer
         : (powerOpen ? power
         : (linkOpen ? link
-        : (batteryOpen ? battery : null)))))))
+        : (batteryOpen ? battery
+        : (settingsOpen ? settings : null))))))))
 
     Ame {
         id: ame
@@ -785,6 +795,31 @@ Item {
                         onContainsMouseChanged: if (containsMouse) pill.soulTarget = "power"
                     }
                 }
+
+                Item {
+                    id: settingsIcon
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 17 * pill.s
+                    height: 17 * pill.s
+
+                    GlyphIcon {
+                        anchors.fill: parent
+                        name: "cog"
+                        color: settingsArea.containsMouse ? Theme.cream : Theme.iconDim
+                        stroke: 1.6
+                    }
+
+                    MouseArea {
+                        id: settingsArea
+                        anchors.fill: parent
+                        anchors.margins: -6 * pill.s
+                        hoverEnabled: true
+                        enabled: hover.live
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: pill.requestSurface("settings")
+                        onContainsMouseChanged: if (containsMouse) pill.soulTarget = "settings"
+                    }
+                }
             }
         }
     }
@@ -858,6 +893,14 @@ Item {
         id: battery
         s: pill.s
         open: pill.batteryOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+    }
+
+    Settings {
+        id: settings
+        s: pill.s
+        open: pill.settingsOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
     }

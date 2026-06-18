@@ -24,6 +24,8 @@ Item {
         id: glyph
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: parent.left
+        visible: Flags.showGlyphs
+        width: Flags.showGlyphs ? implicitWidth : 0
         text: root.kanji
         color: Theme.dim
         font.family: Theme.fontJp
@@ -35,7 +37,7 @@ Item {
         id: field
         anchors.verticalCenter: parent.verticalCenter
         anchors.left: glyph.right
-        anchors.leftMargin: 10 * root.s
+        anchors.leftMargin: Flags.showGlyphs ? 10 * root.s : 0
         anchors.right: counter.left
         anchors.rightMargin: 10 * root.s
         background: null

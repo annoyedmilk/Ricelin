@@ -18,6 +18,7 @@ Singleton {
     readonly property color faint:    "#6f635b"
     readonly property color iconDim:  "#cdbfb4"
     readonly property color hair:     Qt.rgba(230/255, 214/255, 203/255, 0.13)
+    readonly property color hairSoft: Qt.rgba(230/255, 214/255, 203/255, 0.08)
     readonly property color sheen:    Qt.rgba(230/255, 214/255, 203/255, 0.07)
     readonly property color vermDim:   "#8a5440"
     readonly property color vermDimDeep: "#5a3526"

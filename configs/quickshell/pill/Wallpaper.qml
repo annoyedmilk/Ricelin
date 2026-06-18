@@ -101,6 +101,7 @@ PillSurface {
         anchors.leftMargin: 20 * root.s
         anchors.verticalCenter: parent.verticalCenter
         z: 0
+        visible: Flags.showGlyphs
         text: "壁"
         color: Theme.ghost
         opacity: 0.55

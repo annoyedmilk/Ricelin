@@ -161,6 +161,7 @@ PillSurface {
             spacing: 8 * root.s
             Text {
                 anchors.verticalCenter: parent.verticalCenter
+                visible: Flags.showGlyphs
                 text: "調"
                 color: Theme.cream
                 font.family: Theme.fontJp

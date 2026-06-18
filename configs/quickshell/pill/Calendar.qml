@@ -96,6 +96,7 @@ PillSurface {
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter
+                visible: Flags.showGlyphs
                 text: "暦"
                 color: Theme.cream
                 font.family: Theme.fontJp

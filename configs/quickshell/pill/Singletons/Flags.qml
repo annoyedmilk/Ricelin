@@ -15,6 +15,11 @@ Singleton {
 
     property alias dnd: adapter.dnd
     property alias keepAwake: adapter.keepAwake
+    property alias time12h: adapter.time12h
+    property alias clockSeconds: adapter.clockSeconds
+    property alias showGlyphs: adapter.showGlyphs
+    property alias dynamicPalette: adapter.dynamicPalette
+    property alias recordCountdown: adapter.recordCountdown
 
     FileView {
         id: file
@@ -30,6 +35,11 @@ Singleton {
             id: adapter
             property bool dnd: false
             property bool keepAwake: false
+            property bool time12h: false
+            property bool clockSeconds: false
+            property bool showGlyphs: true
+            property bool dynamicPalette: false
+            property int recordCountdown: 5
         }
     }
 

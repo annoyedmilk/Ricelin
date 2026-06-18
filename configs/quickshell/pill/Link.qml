@@ -377,6 +377,7 @@ PillSurface {
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
+                        visible: Flags.showGlyphs
                         text: "繋"
                         color: Theme.cream
                         font.family: Theme.fontJp
@@ -637,6 +638,7 @@ PillSurface {
                     Text {
                         id: inboxKanji
                         anchors.verticalCenter: parent.verticalCenter
+                        visible: Flags.showGlyphs
                         text: "報"
                         color: Theme.dim
                         font.family: Theme.fontJp
@@ -645,12 +647,12 @@ PillSurface {
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "INBOX"
+                        text: Flags.showGlyphs ? "INBOX" : "Notifications"
                         color: Theme.faint
                         font.family: Theme.font
                         font.pixelSize: 9 * root.s
                         font.weight: Font.Bold
-                        font.letterSpacing: 1.8 * root.s
+                        font.letterSpacing: Flags.showGlyphs ? 1.8 * root.s : 0.8 * root.s
                     }
                 }
 
@@ -895,6 +897,7 @@ PillSurface {
 
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
+                    visible: Flags.showGlyphs
                     text: "静"
                     color: Theme.ghost
                     opacity: 0.55
@@ -904,12 +907,12 @@ PillSurface {
                 }
                 Text {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: "SILENCE"
+                    text: Flags.showGlyphs ? "SILENCE" : "No notifications to display"
                     color: Theme.faint
                     font.family: Theme.font
                     font.pixelSize: 9 * root.s
                     font.weight: Font.Bold
-                    font.letterSpacing: 2.2 * root.s
+                    font.letterSpacing: Flags.showGlyphs ? 2.2 * root.s : 0.8 * root.s
                 }
             }
         }
