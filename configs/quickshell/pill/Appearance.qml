@@ -19,7 +19,8 @@ SettingsSurface {
         { item: timeRow, kind: "seg", vals: [false, true], get: function () { return Flags.time12h; }, set: function (v) { Flags.time12h = v; } },
         { item: secRow, kind: "toggle", get: function () { return Flags.clockSeconds; }, set: function (v) { Flags.clockSeconds = v; } },
         { item: glyphRow, kind: "toggle", get: function () { return Flags.showGlyphs; }, set: function (v) { Flags.showGlyphs = v; } },
-        { item: accentRow, kind: "seg", vals: [false, true], get: function () { return Flags.dynamicPalette; }, set: function (v) { Flags.dynamicPalette = v; } }
+        { item: accentRow, kind: "seg", vals: [false, true], get: function () { return Flags.dynamicPalette; }, set: function (v) { Flags.dynamicPalette = v; } },
+        { item: fontRow, kind: "nav", surface: "fontpicker" }
     ]
 
     Column {
@@ -84,13 +85,28 @@ SettingsSurface {
             surface: root
             name: "Accent palette"
             sub: "Static = fixed flame · Dynamic = recolor per wallpaper (matugen)"
-            last: true
 
             SettingsSeg {
                 s: root.s
                 options: [{ label: "Static", value: false }, { label: "Dynamic", value: true }]
                 value: Flags.dynamicPalette
                 onPicked: (v) => Flags.dynamicPalette = v
+            }
+        }
+
+        SettingsRow {
+            id: fontRow
+            surface: root
+            name: "Font"
+            sub: Flags.uiFont.length > 0 ? Flags.uiFont : "Inter"
+            last: true
+
+            GlyphIcon {
+                width: 16 * root.s
+                height: 16 * root.s
+                name: "chevron-right"
+                color: root.focusRowItem === fontRow ? Theme.cream : Theme.iconDim
+                stroke: 1.9
             }
         }
     }

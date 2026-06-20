@@ -19,6 +19,7 @@ Singleton {
     property alias clockSeconds: adapter.clockSeconds
     property alias showGlyphs: adapter.showGlyphs
     property alias dynamicPalette: adapter.dynamicPalette
+    property alias uiFont: adapter.uiFont
     property alias recordCountdown: adapter.recordCountdown
     property alias recordDir: adapter.recordDir
     property alias recordFps: adapter.recordFps
@@ -50,6 +51,7 @@ Singleton {
             property bool clockSeconds: false
             property bool showGlyphs: true
             property bool dynamicPalette: false
+            property string uiFont: ""
             property int recordCountdown: 5
             property string recordDir: ""
             property int recordFps: 60

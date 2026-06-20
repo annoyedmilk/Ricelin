@@ -47,6 +47,7 @@ Item {
     readonly property bool appearanceOpen: surface === "appearance"
     readonly property bool recordingOpen: surface === "recording"
     readonly property bool updatesOpen: surface === "updates"
+    readonly property bool fontpickerOpen: surface === "fontpicker"
     readonly property bool settingsLike: settingsOpen || appearanceOpen || recordingOpen || updatesOpen
     readonly property bool hasMedia: Mpris.players.values.length > 0
 
@@ -107,6 +108,7 @@ Item {
     readonly property real appearanceW: 392 * s
     readonly property real recordingW: 360 * s
     readonly property real updatesW: 360 * s
+    readonly property real fontpickerW: 360 * s
     readonly property real toastW: 342 * s
     readonly property real quickChooseW: 344 * s
     readonly property real quickChooseH: 76 * s
@@ -140,7 +142,8 @@ Item {
         sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
         appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
         recording:  { size: () => Qt.size(recordingW, recording.implicitHeight + 29 * s), ame: recording },
-        updates:    { size: () => Qt.size(updatesW, updates.implicitHeight + 29 * s), ame: updates }
+        updates:    { size: () => Qt.size(updatesW, updates.implicitHeight + 29 * s), ame: updates },
+        fontpicker: { size: () => Qt.size(fontpickerW, fontpicker.implicitHeight + 29 * s), ame: fontpicker }
     })
 
     readonly property string mode: surfaceOpen && surfaces[surface] !== undefined ? surface
@@ -1261,6 +1264,15 @@ Item {
         id: updates
         s: pill.s
         open: pill.updatesOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    FontPicker {
+        id: fontpicker
+        s: pill.s
+        open: pill.fontpickerOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
         onRequestSurface: (name) => pill.requestSurface(name)
