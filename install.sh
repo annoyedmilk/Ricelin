@@ -301,7 +301,7 @@ bootstrap_aur_helper() {
 		warn "run the installer as a normal user (not root); makepkg cannot build as root"
 		return 1
 	fi
-	sudo pacman -S --needed --noconfirm git base-devel || {
+	sudo pacman -Syu --needed --noconfirm git base-devel || {
 		warn "could not install git and base-devel"
 		return 1
 	}
@@ -328,17 +328,20 @@ install_deps() {
 
 	case "$pm" in
 	yay | paru)
-		step "Installing deps via $pm"
+		step "Syncing and installing deps via $pm"
+		# -Syu, not -S: a stale package database makes pacman fetch old file
+		# versions the mirrors have already dropped (404). Full upgrade is also
+		# the only supported way to install on Arch, no partial upgrades.
 		# word-splitting on $pkgs is intentional: one arg per package.
 		# shellcheck disable=SC2086
-		"$pm" -S --needed --noconfirm $pkgs || warn "some packages failed; check the log above"
+		"$pm" -Syu --needed --noconfirm $pkgs || warn "some packages failed; check the log above"
 		;;
 	pacman)
-		step "Installing deps via pacman"
+		step "Syncing and installing deps via pacman"
 		warn "hyprland-git, rishot-git and bibata-cursor-theme-bin live in the AUR;"
 		warn "pacman cannot build them. Install an AUR helper (yay or paru) for the full rice."
 		# shellcheck disable=SC2086
-		sudo pacman -S --needed --noconfirm $pkgs || warn "some packages failed (AUR ones expected to)"
+		sudo pacman -Syu --needed --noconfirm $pkgs || warn "some packages failed (AUR ones expected to)"
 		;;
 	*)
 		warn "no supported package manager found"
