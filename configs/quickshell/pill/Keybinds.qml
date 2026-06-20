@@ -240,6 +240,7 @@ PillSurface {
 
     onActiveChanged: {
         if (active) {
+            bindsFile.reload();
             refresh();
             focusIndex = 0;
             listening = false;
@@ -276,8 +277,10 @@ PillSurface {
         id: bindsFile
         path: root.bindsPath
         blockLoading: true
+        watchChanges: true
         printErrors: false
         onLoaded: root.refresh()
+        onFileChanged: reload()
     }
 
     FileView {
