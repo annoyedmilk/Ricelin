@@ -44,18 +44,18 @@ Singleton {
      */
     function glyphFor(code, day) {
         if (code === 0)
-            return day ? "晴" : "月";
+            return day ? "sun" : "moon";
         if (code <= 3)
-            return "曇";
+            return "cloud";
         if (code === 45 || code === 48)
-            return "霧";
+            return "cloud-fog";
         if (code >= 95)
-            return "雷";
+            return "cloud-lightning";
         if ((code >= 71 && code <= 77) || code === 85 || code === 86)
-            return "雪";
+            return "cloud-snow";
         if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))
-            return "雨";
-        return "曇";
+            return "cloud-rain";
+        return "cloud";
     }
 
     /** Short english word for a WMO weather code, for labels and accessibility. */

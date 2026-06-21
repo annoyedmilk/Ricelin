@@ -91,7 +91,7 @@ Item {
     readonly property real hoverH: 58 * s
     readonly property real mixerW: 93 * Math.max(4, mixer.faderCount) * s
     readonly property real mixerH: 214 * s
-    readonly property real calendarW: 318 * s
+    readonly property real calendarW: (calendar.implicitWidth > 0 ? calendar.implicitWidth : 282 * s) + 36 * s
     readonly property real calendarH: calendar.implicitHeight + 32 * s
     readonly property real launcherW: 360 * s
     readonly property real launcherH: 332 * s
@@ -820,13 +820,13 @@ Item {
                 visible: Weather.ready
                 spacing: 5 * pill.s
 
-                Text {
+                GlyphIcon {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Weather.glyphFor(Weather.codeNow, Weather.isDay)
+                    width: 16 * pill.s
+                    height: 16 * pill.s
+                    name: Weather.glyphFor(Weather.codeNow, Weather.isDay)
                     color: Theme.cream
-                    font.family: Theme.fontJp
-                    font.weight: Font.Medium
-                    font.pixelSize: 15 * pill.s
+                    stroke: 1.9
                 }
 
                 Text {
