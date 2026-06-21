@@ -39,6 +39,9 @@ wallust reads a palette from each wallpaper and recolors the terminal, window bo
 
 ## Install
 
+> [!WARNING]
+> The installer is still work in progress. It hasn't been tested on a clean machine other than mine yet, so expect rough edges. If you run it, read `install.sh` first and have backups. Bug reports are welcome, just say it's the installer.
+
 Arch or CachyOS. If you have no AUR helper it builds yay for you:
 
 ```sh
