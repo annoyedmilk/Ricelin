@@ -42,8 +42,9 @@ SettingsSurface {
         : checked ? "ok"
         : "idle"
 
+    readonly property bool spinning: checking || updating
+
     readonly property string badgeIcon: statusKind === "behind" ? "arrow-up"
-        : (statusKind === "checking" || statusKind === "updating") ? "reboot"
         : statusKind === "fail" ? "close"
         : "check"
 
@@ -180,14 +181,25 @@ SettingsSurface {
 
                 GlyphIcon {
                     anchors.centerIn: parent
-                    width: 18 * root.s
-                    height: 18 * root.s
+                    visible: !root.spinning
+                    width: 17 * root.s
+                    height: 17 * root.s
                     name: root.badgeIcon
+                    color: root.badgeTint
+                    stroke: 2.2
+                }
+
+                GlyphIcon {
+                    anchors.centerIn: parent
+                    visible: root.spinning
+                    width: 16 * root.s
+                    height: 16 * root.s
+                    name: "reboot"
                     color: root.badgeTint
                     stroke: 2
 
                     RotationAnimation on rotation {
-                        running: root.checking || root.updating
+                        running: root.spinning
                         loops: Animation.Infinite
                         from: 0
                         to: 360
