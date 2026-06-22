@@ -48,3 +48,9 @@ hl.window_rule({
     size   = { 1500, 850 },
     center = true,
 })
+
+hl.window_rule({
+    name         = "idle-inhibit-fullscreen",
+    match        = { class = ".*" },
+    idle_inhibit = "fullscreen",
+})
