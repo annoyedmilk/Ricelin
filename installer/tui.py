@@ -306,6 +306,49 @@ def outro(message):
     _write(_header(OUTRO, VERM, message, CREAM, _width()) + "\n")
 
 
+def closing(title, tally, steps, attention, notes=None):
+    """
+    The end-of-run summary, shaped so it reads at a glance instead of as a wall of
+    text. A vermilion headline, a one-line package tally, then the numbered next
+    steps with the action lit bright and its reason dimmed beside it. Anything that
+    still needs the user lands last under its own vermilion header with the exact
+    command to paste, so the one thing left to do never hides inside the prose.
+    """
+    width = _width()
+    out = [_header(OUTRO, VERM, title, BRIGHT, width), _spacer(width)]
+
+    if tally:
+        out.append(_gutter([(DIM, "packages   "), (CREAM, tally)], width))
+        out.append(_spacer(width))
+
+    if steps:
+        out.append(_header(DONE, FLAME, "Next", CREAM, width))
+        keyw = max((_vis(k) for k, _ in steps), default=0)
+        for i, (key, hint) in enumerate(steps, 1):
+            seg = [(FLAME, f"{i}  "), (BRIGHT, key)]
+            if hint:
+                seg += [("", " " * (keyw - _vis(key) + 3)), (DIM, hint)]
+            out.append(_gutter(seg, width))
+        out.append(_spacer(width))
+
+    if notes:
+        for line in notes:
+            out.append(_gutter([(FAINT, line)], width))
+        out.append(_spacer(width))
+
+    if attention:
+        head = "One step needs you" if len(attention) == 1 else "A few steps need you"
+        out.append(_header(OUTRO, VERM, head, BRIGHT, width))
+        labw = max((_vis(label) for label, _ in attention), default=0)
+        for label, cmd in attention:
+            out.append(_gutter(
+                [(FLAME, DONE + " "), (CREAM, label),
+                 ("", " " * (labw - _vis(label) + 3)), (BRIGHT, cmd)], width))
+        out.append(_spacer(width))
+
+    _write("\n".join(out) + "\n")
+
+
 def _raise_keyboard_interrupt(signum, frame):
     """Turn a SIGTERM into a KeyboardInterrupt so the finally cleanup still runs."""
     raise KeyboardInterrupt

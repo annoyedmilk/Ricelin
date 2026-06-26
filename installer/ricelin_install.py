@@ -17,6 +17,7 @@ path and is meant to work headless. --quickstart skips the wizard and takes the
 Quick-profile defaults, so it pairs with --dry-run for a non-interactive check.
 """
 import argparse
+import getpass
 import os
 import shlex
 import shutil
@@ -398,46 +399,39 @@ def deploy_brave_theme(source, dry):
 
 
 def _report(plan, failures, notes, info, choices, args, do_pkgs, dry):
-    """The closing report: what landed, what was skipped, what failed, what's next."""
-    verb = "Would install" if dry else "Installed"
-    lines = []
+    """The closing report: a package tally, the next steps, and anything still owed."""
+    tally = None
     if do_pkgs:
+        parts = []
         landed = plan["native"] + plan["aur"]
         if landed:
-            lines.append(f"{verb}: " + ", ".join(landed))
+            parts.append(f"{len(landed)} new")
         if plan["fallbacks"]:
-            lines.append(f"{verb} via fallback: " + ", ".join(f for f, _, _ in plan["fallbacks"]))
+            parts.append(f"{len(plan['fallbacks'])} built")
         if plan["skipped"]:
-            lines.append("Already present: " + ", ".join(plan["skipped"]))
-    if notes:
-        lines.extend(notes)
-    tui.info(lines or ["No packages to install, configs only."])
+            parts.append(f"{len(plan['skipped'])} already here")
+        if parts:
+            tally = ("would add " if dry else "") + " · ".join(parts)
 
-    if failures:
-        flines = ["Some steps did not finish:"]
-        for step, _detail, hint in failures:
-            flines.append(f"{step} -> {hint}")
-        flines.append("Everything else went in; re-run to retry just these.")
-        tui.info(flines)
-
-    nxt = []
+    steps = []
     if dry:
-        nxt.append("Dry run, nothing changed. A real run finishes like this:")
-    else:
-        nxt.append("Everything is installed and the Ricelin config is deployed.")
-    nxt.append("Log out and back in. The input group from uinput and the fish "
-               "shell change both need a fresh login to take hold.")
+        steps.append(("dry run", "nothing changed, a real run ends like this"))
+    steps.append(("log back in", "fish and the input group need a fresh session"))
     if info["init"] != "systemd" and do_pkgs:
-        nxt.append("Enable NetworkManager and bluetooth with your init first "
-                   "(the commands are listed above).")
-    nxt.append("Then, from a TTY, start the compositor with: Hyprland")
-    nxt.append("A starter wallpaper is set. Press Super+C to pick another or "
-               "download more.")
+        steps.append(("enable services", "NetworkManager and bluetooth via your init"))
+    steps.append(("start Hyprland", "from a TTY"))
+    steps.append(("pick a wallpaper", "Super+C to swap or grab more"))
     if choices["brave"]:
-        nxt.append("Brave is installed. Open brave://settings/appearance and load "
-                   "the Ricelin theme from ~/.config/ricelin/brave-theme.")
-    tui.info(nxt)
-    tui.outro("Dry run complete, nothing was changed" if dry else "Ricelin is in")
+        steps.append(("brave theme",
+                      "brave://settings/appearance, load ~/.config/ricelin/brave-theme"))
+
+    attention = []
+    for step, _detail, hint in failures:
+        cmd = hint[len("Run: "):] if hint.startswith("Run: ") else hint
+        attention.append((step, cmd))
+
+    title = "Dry run complete" if dry else "Ricelin is in"
+    tui.closing(title, tally, steps, attention, notes or None)
 
 
 def run(args):
@@ -607,7 +601,11 @@ def run(args):
         # j. fish as the login shell, kept even with --no-deps.
         if choices["fish"]:
             fishbin = shutil.which("fish") or "/usr/bin/fish"
-            ok, detail = _run(["chsh", "-s", fishbin], dry)
+            # chsh prompts for the login password through PAM, which a piped
+            # `curl | bash` run has no terminal for, so it always failed. Set it
+            # as root instead; the sudo timestamp is already warm from the
+            # package step, so this just goes through.
+            ok, detail = _run(["sudo", "chsh", "-s", fishbin, getpass.getuser()], dry)
             record(ok, detail, "Set fish as login shell",
                    "Run: chsh -s $(command -v fish)")
 
