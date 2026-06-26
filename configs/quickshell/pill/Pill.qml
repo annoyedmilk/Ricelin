@@ -43,6 +43,8 @@ Item {
     readonly property bool batteryOpen: surface === "battery"
     readonly property bool settingsOpen: surface === "settings"
     readonly property bool keybindsOpen: surface === "keybinds"
+    readonly property bool workspacesOpen: surface === "workspaces"
+    readonly property bool stashOpen: surface === "stash"
     readonly property bool recorderOpen: surface === "recorder"
     readonly property bool sysmonOpen: surface === "sysmon"
     readonly property bool appearanceOpen: surface === "appearance"
@@ -136,6 +138,8 @@ Item {
     readonly property real batteryW: 316 * s
     readonly property real settingsW: 392 * s
     readonly property real keybindsW: 460 * s
+    readonly property real workspacesW: 392 * s
+    readonly property real stashW: 392 * s
     readonly property real recorderW: 384 * s
     readonly property real sysmonW: 392 * s
     readonly property real appearanceW: 392 * s
@@ -175,6 +179,8 @@ Item {
         battery:   { size: () => Qt.size(batteryW, battery.implicitHeight + 26 * s), ame: battery },
         settings:  { size: () => Qt.size(settingsW, settings.implicitHeight + 29 * s), ame: settings },
         keybinds:  { size: () => Qt.size(keybindsW, keybinds.implicitHeight + 29 * s), ame: keybinds },
+        workspaces: { size: () => Qt.size(workspacesW, workspaces.implicitHeight + 29 * s), ame: workspaces },
+        stash:     { size: () => Qt.size(stashW, stash.implicitHeight + 29 * s), ame: stash },
         recorder:  { size: () => Qt.size(recorderW, recorder.implicitHeight + 33 * s), ame: recorder },
         sysmon:    { size: () => Qt.size(sysmonW, sysmon.implicitHeight + 33 * s), ame: sysmon },
         appearance: { size: () => Qt.size(appearanceW, appearance.implicitHeight + 29 * s), ame: appearance },
@@ -343,7 +349,14 @@ Item {
             pill.requestSurface("appearance");
             return;
         }
-        if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen || pill.animationOpen) {
+        if (pill.stashOpen) {
+            if (stash.addOpen)
+                stash.closeAdd();
+            else
+                pill.requestSurface("workspaces");
+            return;
+        }
+        if (pill.appearanceOpen || pill.updatesOpen || pill.displayOpen || pill.inputOpen || pill.lookOpen || pill.idlelockOpen || pill.animationOpen || pill.workspacesOpen) {
             pill.requestSurface("settings");
             return;
         }
@@ -1349,6 +1362,24 @@ Item {
         id: keybinds
         s: pill.s
         open: pill.keybindsOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    WorkspacesSurface {
+        id: workspaces
+        s: pill.s
+        open: pill.workspacesOpen
+        morphCloseness: pill.morphCloseness
+        onRequestClose: pill.requestClose()
+        onRequestSurface: (name) => pill.requestSurface(name)
+    }
+
+    Stash {
+        id: stash
+        s: pill.s
+        open: pill.stashOpen
         morphCloseness: pill.morphCloseness
         onRequestClose: pill.requestClose()
         onRequestSurface: (name) => pill.requestSurface(name)

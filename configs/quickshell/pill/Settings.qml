@@ -22,6 +22,7 @@ SettingsSurface {
         { item: inputRow, kind: "nav", surface: "input" },
         { item: animationRow, kind: "nav", surface: "animation" },
         { item: keybindsRow, kind: "nav", surface: "keybinds" },
+        { item: workspacesRow, kind: "nav", surface: "workspaces" },
         { item: idleRow, kind: "nav", surface: "idlelock" },
         { item: updatesRow, kind: "nav", surface: "updates" }
     ]
@@ -163,6 +164,23 @@ SettingsSurface {
                 height: 16 * root.s
                 name: "chevron-right"
                 color: root.focusRowItem === keybindsRow ? Theme.cream : Theme.iconDim
+                stroke: 2.2
+            }
+        }
+
+        SettingsRow {
+            id: workspacesRow
+            surface: root
+            captionOnFocus: true
+            icon: "app-window"
+            name: "Workspaces"
+            sub: "Special spaces and their keys"
+
+            GlyphIcon {
+                width: 16 * root.s
+                height: 16 * root.s
+                name: "chevron-right"
+                color: root.focusRowItem === workspacesRow ? Theme.cream : Theme.iconDim
                 stroke: 2.2
             }
         }
