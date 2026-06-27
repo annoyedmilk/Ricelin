@@ -14,4 +14,7 @@ hl.config({
     cursor = {
         no_hardware_cursors = true,
     },
+    binds = {
+        scroll_event_delay = 40,
+    },
 })
