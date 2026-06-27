@@ -375,6 +375,31 @@ def bridge_wallpaper_binary(dry):
     return True, "", True
 
 
+def link_ricelin_cli(dry):
+    """
+    Put the `ricelin` control CLI on PATH. The script ships inside the deployed
+    config at ~/.config/hypr/scripts/ricelin, so symlink it into ~/.local/bin where
+    the wallpaper bridge already lives. Returns (ok, detail, linked) so the caller
+    folds it into record() and flags the PATH note only when a fresh link was made.
+    """
+    target = deploy.CONFIG_ROOT / "hypr" / "scripts" / "ricelin"
+    link = Path.home() / ".local" / "bin" / "ricelin"
+    if dry:
+        print(f"  would link: ricelin -> {target}")
+        return True, "", False
+    if not target.exists():
+        return True, "", False
+    try:
+        link.parent.mkdir(parents=True, exist_ok=True)
+        if link.is_symlink() or link.exists():
+            link.unlink()
+        link.symlink_to(target)
+    except OSError as exc:
+        return False, f"{exc}: link ricelin CLI", False
+    print(f"  linked: ricelin -> {target}")
+    return True, "", True
+
+
 def deploy_brave_theme(source, dry):
     """
     Copy the bundled Brave theme into ~/.config/ricelin so the user can point
@@ -662,6 +687,14 @@ def run(args):
         except OSError as exc:
             record(False, str(exc), "Neutralize configs",
                    "Check ~/.config permissions and re-run the installer.")
+
+        # k2. put the ricelin control CLI on PATH now that the script is deployed.
+        ok, detail, linked = link_ricelin_cli(dry)
+        record(ok, detail, "Link ricelin CLI",
+               "Symlink ~/.local/bin/ricelin to ~/.config/hypr/scripts/ricelin yourself.")
+        if linked:
+            notes.append("Linked the ricelin CLI into ~/.local/bin. With it on PATH "
+                         "you can run: ricelin status, ricelin restart, ricelin update.")
 
         # l. seed a starter wallpaper so the first boot has a background, a
         #    populated picker and a palette to render.
