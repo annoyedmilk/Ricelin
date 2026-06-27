@@ -269,22 +269,6 @@ PillSurface {
         }
     }
 
-    component FaderTip: Item {
-        id: faderTip
-        property string title: ""
-        property bool show: false
-        width: 1
-        height: 18 * root.s
-        anchors.bottom: parent.bottom
-        anchors.horizontalCenter: parent.horizontalCenter
-
-        Tooltip {
-            s: root.s
-            title: faderTip.title
-            show: faderTip.show
-        }
-    }
-
     Item {
         id: header
         z: 5
@@ -485,7 +469,7 @@ PillSurface {
         anchors.topMargin: 10 * root.s
         anchors.left: parent.left
         anchors.right: parent.right
-        height: 138 * root.s
+        height: 142 * root.s
         spacing: 0
 
         readonly property real colW: width / Math.max(1, root.faderCount)
@@ -506,7 +490,8 @@ PillSurface {
                 width: faderRow.colW
                 s: root.s
                 icon: "sun"
-                subLabel: modelData.label
+                subLabel: "Brightness"
+                subPersistent: false
                 focused: root.focusIndex === index
                 value: pct / 100
                 valueLabel: pct + "%"
@@ -537,11 +522,6 @@ PillSurface {
                         }
                     }
                 }
-
-                FaderTip {
-                    title: "Brightness"
-                    show: root.hoverIndex === brFader.index
-                }
             }
         }
 
@@ -555,16 +535,13 @@ PillSurface {
                 width: faderRow.colW
                 s: root.s
                 icon: "sun"
+                subLabel: "Brightness"
+                subPersistent: false
                 focused: root.focusIndex === brRep.count
                 value: Devices.backlightPct / 100
                 valueLabel: Devices.backlightPct + "%"
                 onMoved: (v) => Devices.backlightPct = Math.max(1, Math.min(100, Math.round(v * 100)))
                 onCommitted: (v) => { root.pendingBacklight = Math.max(1, Math.min(100, Math.round(v * 100))); blDebounce.restart(); }
-
-                FaderTip {
-                    title: "Brightness"
-                    show: root.hoverIndex === brRep.count
-                }
             }
         }
 
@@ -573,37 +550,33 @@ PillSurface {
             width: faderRow.colW
             s: root.s
             icon: "monitor"
+            subLabel: "Vibrance"
+            subPersistent: false
             focused: root.focusIndex === root.faderCount - 3
             value: Devices.vibrance / 100
             valueLabel: Devices.vibrance + "%"
             onMoved: (v) => Devices.vibrance = Math.round(v * 100)
             onCommitted: (v) => { root.pendingVibrance = v * 100; vibDebounce.restart(); }
-
-            FaderTip {
-                title: "Vibrance"
-                show: root.hoverIndex === root.faderCount - 3
-            }
         }
         VFader {
             id: volFader
             width: faderRow.colW
             s: root.s
             icon: "speaker"
+            subLabel: "Volume"
+            subPersistent: false
             focused: root.focusIndex === root.faderCount - 2
             value: root.sink && root.sink.audio ? root.sink.audio.volume : 0
             valueLabel: Math.round((root.sink && root.sink.audio ? root.sink.audio.volume : 0) * 100) + "%"
             onMoved: (v) => { if (root.sink && root.sink.audio) root.sink.audio.volume = v; }
-
-            FaderTip {
-                title: "Volume"
-                show: root.hoverIndex === root.faderCount - 2
-            }
         }
         VFader {
             id: micFader
             width: faderRow.colW
             s: root.s
             icon: (root.source && root.source.audio && root.source.audio.muted) ? "mic-off" : "mic"
+            subLabel: "Microphone"
+            subPersistent: false
             focused: root.focusIndex === root.faderCount - 1
             value: root.source && root.source.audio ? root.source.audio.volume : 0
             valueLabel: (root.source && root.source.audio && root.source.audio.muted)
@@ -619,13 +592,6 @@ PillSurface {
                 height: 22 * root.s
                 cursorShape: Qt.PointingHandCursor
                 onClicked: { if (root.source && root.source.audio) root.source.audio.muted = !root.source.audio.muted; }
-
-                Tooltip {
-                    s: root.s
-                    title: "Microphone"
-                    desc: "Click the icon to mute"
-                    show: root.hoverIndex === root.faderCount - 1
-                }
             }
         }
     }
